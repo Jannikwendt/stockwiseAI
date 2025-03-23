@@ -1,69 +1,95 @@
-# Welcome to your Lovable project
+# StockWiseAI: AI-powered Stock Recommendation Chatbot
 
-## Project info
+**Final Bachelor Project: AI & Computer Science, IE University**  
+**Author:** Jannik Wendt  
+**Advisor:** [Advisor's Name]  
+**Date:** March 2025
 
-**URL**: https://lovable.dev/projects/61e3d3c0-9b78-4b78-baac-e916e9c28518
+---
 
-## How can I edit this code?
+## 🚀 Project Overview
 
-There are several ways of editing your application.
+**StockWiseAI** is an innovative, beginner-friendly web application designed to provide personalized financial insights and stock recommendations using Artificial Intelligence (AI). Leveraging Natural Language Processing (NLP) with the ChatGPT API and real-time financial analytics via Yahoo Finance (yfinance), StockWiseAI offers intuitive, user-friendly investment guidance.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/61e3d3c0-9b78-4b78-baac-e916e9c28518) and start prompting.
+## 🎯 Objectives
+- Provide personalized and interactive stock recommendations tailored to users' risk profiles.
+- Simplify complex financial concepts into clear, beginner-friendly explanations.
+- Enhance user engagement through intuitive UI/UX design and interactive visualizations.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🛠️ Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend:** React.js, Tailwind CSS, Chart.js, shadcn-ui
+- **Backend:** Node.js, Express
+- **APIs:** OpenAI ChatGPT, Yahoo Finance (yfinance)
+- **Database (planned):** Supabase
+- **Build Tools:** Vite, TypeScript
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🌟 Key Features
+- **Chatbot Interface:** Interactive, conversational AI chatbot that maintains context and provides clear, concise financial advice.
+- **Risk Assessment:** Built-in questionnaire to determine user risk tolerance for tailored recommendations.
+- **Interactive Charts:** Real-time candlestick charts and stock performance visualizations.
+- **Comparative Analysis:** Side-by-side stock comparison tools.
+- **Educational Resources:** Tooltips and tutorials on fundamental financial concepts (P/E ratios, volatility, diversification).
+- **Watchlist & Alerts:** Personalized watchlists and alerts based on user-selected stocks (planned).
+- **Sentiment Analysis:** Enhanced recommendations based on market sentiment (planned).
+- **Monte Carlo Simulations:** Visual risk assessments through Monte Carlo methods (planned).
 
+---
+
+## 🚀 Getting Started (Local Development)
+
+Ensure you have [Node.js & npm](https://github.com/nvm-sh/nvm#installing-and-updating) installed.
+
+Clone and run the project locally:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Changes pushed to this repository will automatically be reflected on the Lovable platform.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 📦 Project Structure
+```
+StockwiseAI/
+│
+├── frontend/        # React Frontend
+├── backend/         # Node.js backend
+├── public/          # Public assets
+├── src/             # Source files
+│   ├── components/  # UI Components
+│   └── services/    # API integration services
+└── README.md
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🚧 Next Steps
+- [ ] Implement user authentication and persistent storage via Supabase.
+- [ ] Complete sentiment analysis integration.
+- [ ] Refine and debug interactive visualization features.
+- [ ] User testing and iterative improvements based on feedback.
+- [ ] Deploy final application.
 
-This project is built with .
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📄 License
 
-## How can I deploy this project?
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-Simply open [Lovable](https://lovable.dev/projects/61e3d3c0-9b78-4b78-baac-e916e9c28518) and click on Share -> Publish.
+---
 
-## I want to use a custom domain - is that possible?
+## 🙏 Acknowledgements
+Special thanks to my advisor, peers, and family who supported and guided me through this project.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+---
+
