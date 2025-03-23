@@ -2,7 +2,7 @@
 
 **Final Bachelor Project: AI & Computer Science, IE University**  
 **Author:** Jannik Wendt  
-**Advisor:** [Advisor's Name]  
+**Advisor:** Robert Polding  
 **Date:** March 2025
 
 ---
