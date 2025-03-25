@@ -113,7 +113,20 @@ const Layout = ({ children, title = "StockWise AI" }: LayoutProps) => {
             </Button>
           )}
           <h1 className="text-lg font-medium">{title}</h1>
-          {/* Removed the Risk Assessment button from here */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 gap-1.5"
+              onClick={() => {
+                // In a real app, this would navigate to the risk assessment
+                console.log("Navigate to risk assessment");
+              }}
+            >
+              <PieChart size={16} />
+              <span>Risk Assessment</span>
+            </Button>
+          </div>
         </header>
 
         {/* Page content */}
