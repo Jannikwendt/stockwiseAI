@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,10 +93,10 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
     profile: "Conservative",
     description: "You prefer stability and lower risk. Your portfolio is designed to preserve capital while generating modest growth and income.",
     allocation: [
-      { name: "Bonds", value: 50, color: "#8884d8" },
-      { name: "Large Cap Stocks", value: 25, color: "#82ca9d" },
-      { name: "Cash", value: 15, color: "#ffc658" },
-      { name: "International", value: 10, color: "#ff8042" },
+      { name: "Bonds", value: 50, color: "#E5DEFF" },
+      { name: "Large Cap Stocks", value: 25, color: "#F2FCE2" },
+      { name: "Cash", value: 15, color: "#FEF7CD" },
+      { name: "International", value: 10, color: "#FDE1D3" },
     ],
     keyPoints: [
       "Focus on capital preservation and income",
@@ -111,11 +110,11 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
     profile: "Moderate",
     description: "You seek a balance between growth and safety. Your portfolio aims for long-term growth while managing volatility through diversification.",
     allocation: [
-      { name: "Large Cap Stocks", value: 40, color: "#82ca9d" },
-      { name: "Bonds", value: 30, color: "#8884d8" },
-      { name: "International", value: 15, color: "#ff8042" },
-      { name: "Mid Cap Stocks", value: 10, color: "#8dd1e1" },
-      { name: "Cash", value: 5, color: "#ffc658" },
+      { name: "Large Cap Stocks", value: 40, color: "#F2FCE2" },
+      { name: "Bonds", value: 30, color: "#E5DEFF" },
+      { name: "International", value: 15, color: "#FDE1D3" },
+      { name: "Mid Cap Stocks", value: 10, color: "#D3E4FD" },
+      { name: "Cash", value: 5, color: "#FEF7CD" },
     ],
     keyPoints: [
       "Balance between growth and income",
@@ -129,11 +128,11 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
     profile: "Aggressive",
     description: "You prioritize growth potential and can tolerate higher volatility. Your portfolio is positioned for maximum long-term capital appreciation.",
     allocation: [
-      { name: "Large Cap Stocks", value: 45, color: "#82ca9d" },
-      { name: "International", value: 25, color: "#ff8042" },
-      { name: "Mid Cap Stocks", value: 15, color: "#8dd1e1" },
-      { name: "Small Cap Stocks", value: 10, color: "#d0ed57" },
-      { name: "Bonds", value: 5, color: "#8884d8" },
+      { name: "Large Cap Stocks", value: 45, color: "#E5DEFF" },
+      { name: "International", value: 25, color: "#FDE1D3" },
+      { name: "Mid Cap Stocks", value: 15, color: "#D3E4FD" },
+      { name: "Small Cap Stocks", value: 10, color: "#F2FCE2" },
+      { name: "Bonds", value: 5, color: "#FEF7CD" },
     ],
     keyPoints: [
       "Focus on capital appreciation and growth",
@@ -175,7 +174,6 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
         setIsAnimating(false);
       }, 300);
     } else {
-      // Calculate risk score
       let totalScore = 0;
       questions.forEach((question) => {
         const answer = answers[question.id];
@@ -185,8 +183,6 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
         }
       });
 
-      // Determine risk profile based on score
-      // Max possible score: 15 (5 questions × max score 3)
       let profile: RiskProfile;
       if (totalScore <= 8) {
         profile = "Conservative";
@@ -226,18 +222,19 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   };
 
   const handleChatWithProfile = () => {
-    // This is where you'd trigger the chatbot with the user's risk profile
     console.log("Starting chat with risk profile:", riskProfile?.profile);
-    // Implement actual chat trigger functionality here
   };
 
   const question = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
 
-  // Custom render function for the pie chart labels
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
-    // No labels to be rendered inside the pie chart - we'll use the Legend instead
-    return null;
+  const renderCustomizedLabel = () => null;
+
+  const tooltipFormatter = (value: number) => [`${value}%`, 'Allocation'];
+
+  const legendFormatter = (value: string, entry: any, index: number) => {
+    const item = riskProfile?.allocation[index];
+    return `${value}: ${item?.value}%`;
   };
 
   return (
@@ -344,12 +341,12 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="pb-2">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="space-y-6"
+              className="space-y-8"
             >
               <div className="rounded-lg border border-primary/10 bg-primary/5 p-4">
                 <h3 className="text-2xl font-bold text-primary mb-2">
@@ -360,58 +357,67 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                 </p>
               </div>
 
-              <div>
-                <h4 className="text-base font-medium mb-4">Recommended Asset Allocation</h4>
-                <div className="h-[240px] w-full">
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-center">Recommended Asset Allocation</h4>
+                <div className="h-[280px] w-full px-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={riskProfile?.allocation}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={3}
                         dataKey="value"
                         labelLine={false}
                         label={renderCustomizedLabel}
-                        animationDuration={1000}
+                        animationDuration={1200}
                         animationBegin={400}
+                        stroke="#ffffff"
+                        strokeWidth={2}
                       >
                         {riskProfile?.allocation.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={entry.color} 
-                            stroke="transparent"
+                            fill={entry.color}
+                            className="drop-shadow-sm"
                           />
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                        formatter={tooltipFormatter}
                         contentStyle={{ 
                           backgroundColor: 'white', 
                           border: '1px solid #f0f0f0',
-                          borderRadius: '6px', 
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          borderRadius: '8px', 
+                          boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.08)',
+                          padding: '8px 12px',
+                          fontSize: '0.875rem'
                         }}
                       />
                       <Legend 
                         layout="horizontal" 
                         verticalAlign="bottom" 
                         align="center"
-                        formatter={(value, entry, index) => {
-                          const item = riskProfile?.allocation[index];
-                          return `${value}: ${item?.value}%`;
+                        formatter={legendFormatter}
+                        wrapperStyle={{ 
+                          paddingTop: 20,
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          justifyContent: 'center'
                         }}
-                        wrapperStyle={{ paddingTop: 20 }}
+                        iconSize={10}
+                        iconType="circle"
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h4 className="text-base font-medium">Key Characteristics</h4>
+              <div className="space-y-3 bg-muted/20 p-4 rounded-lg">
+                <h4 className="text-base font-medium">Key Investment Characteristics</h4>
                 <ul className="space-y-2">
                   {riskProfile?.keyPoints.map((point, index) => (
                     <li
