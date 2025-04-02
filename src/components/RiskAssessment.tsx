@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import {
   ArrowLeft, 
   CheckCircle2, 
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -84,6 +86,7 @@ interface RiskProfileData {
     value: number;
     color: string;
   }[];
+  summary: string;
   keyPoints: string[];
   suitableFor: string;
 }
@@ -92,11 +95,12 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   Conservative: {
     profile: "Conservative",
     description: "You prefer stability and lower risk. Your portfolio is designed to preserve capital while generating modest growth and income.",
+    summary: "This portfolio emphasizes stability and income with lower volatility, suitable for short-term goals.",
     allocation: [
-      { name: "Bonds", value: 50, color: "#E5DEFF" },
-      { name: "Large Cap Stocks", value: 25, color: "#F2FCE2" },
-      { name: "Cash", value: 15, color: "#FEF7CD" },
-      { name: "International", value: 10, color: "#FDE1D3" },
+      { name: "Bonds", value: 50, color: "#9EA1FF" },
+      { name: "Large Cap Stocks", value: 25, color: "#98E4FF" },
+      { name: "Cash", value: 15, color: "#FFEF82" },
+      { name: "International", value: 10, color: "#FFA69E" },
     ],
     keyPoints: [
       "Focus on capital preservation and income",
@@ -109,12 +113,13 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   Moderate: {
     profile: "Moderate",
     description: "You seek a balance between growth and safety. Your portfolio aims for long-term growth while managing volatility through diversification.",
+    summary: "This portfolio balances growth potential with reasonable risk control through diversification.",
     allocation: [
-      { name: "Large Cap Stocks", value: 40, color: "#F2FCE2" },
-      { name: "Bonds", value: 30, color: "#E5DEFF" },
-      { name: "International", value: 15, color: "#FDE1D3" },
-      { name: "Mid Cap Stocks", value: 10, color: "#D3E4FD" },
-      { name: "Cash", value: 5, color: "#FEF7CD" },
+      { name: "Large Cap Stocks", value: 40, color: "#98E4FF" },
+      { name: "Bonds", value: 30, color: "#9EA1FF" },
+      { name: "International", value: 15, color: "#FFA69E" },
+      { name: "Mid Cap Stocks", value: 10, color: "#B8E0D2" },
+      { name: "Cash", value: 5, color: "#FFEF82" },
     ],
     keyPoints: [
       "Balance between growth and income",
@@ -127,12 +132,13 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   Aggressive: {
     profile: "Aggressive",
     description: "You prioritize growth potential and can tolerate higher volatility. Your portfolio is positioned for maximum long-term capital appreciation.",
+    summary: "This portfolio maximizes growth potential with higher volatility, ideal for long-term investors.",
     allocation: [
-      { name: "Large Cap Stocks", value: 45, color: "#E5DEFF" },
-      { name: "International", value: 25, color: "#FDE1D3" },
-      { name: "Mid Cap Stocks", value: 15, color: "#D3E4FD" },
-      { name: "Small Cap Stocks", value: 10, color: "#F2FCE2" },
-      { name: "Bonds", value: 5, color: "#FEF7CD" },
+      { name: "Large Cap Stocks", value: 45, color: "#98E4FF" },
+      { name: "International", value: 25, color: "#FFA69E" },
+      { name: "Mid Cap Stocks", value: 15, color: "#B8E0D2" },
+      { name: "Small Cap Stocks", value: 10, color: "#C7F9CC" },
+      { name: "Bonds", value: 5, color: "#9EA1FF" },
     ],
     keyPoints: [
       "Focus on capital appreciation and growth",
@@ -225,16 +231,42 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
     console.log("Starting chat with risk profile:", riskProfile?.profile);
   };
 
+  const handleExploreStrategy = () => {
+    console.log("Exploring investment strategy for:", riskProfile?.profile);
+  };
+
   const question = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
 
-  const renderCustomizedLabel = () => null;
+  const customizedTooltip = (props: any) => {
+    const { active, payload } = props;
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-background p-3 rounded-lg shadow-lg border border-border text-sm">
+          <p className="font-medium text-foreground">{data.name}</p>
+          <p className="text-primary font-bold">{data.value}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
-  const tooltipFormatter = (value: number) => [`${value}%`, 'Allocation'];
-
-  const legendFormatter = (value: string, entry: any, index: number) => {
-    const item = riskProfile?.allocation[index];
-    return `${value}: ${item?.value}%`;
+  const renderLegend = (props: any) => {
+    const { payload } = props;
+    return (
+      <ul className="flex flex-wrap justify-center gap-4 mt-4">
+        {payload.map((entry: any, index: number) => (
+          <li key={`legend-${index}`} className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-sm border border-background/20 shadow-sm" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="font-medium text-sm">{entry.value}: {entry.payload.value}%</span>
+          </li>
+        ))}
+      </ul>
+    );
   };
 
   return (
@@ -357,9 +389,9 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <h4 className="text-lg font-medium text-center">Recommended Asset Allocation</h4>
-                <div className="h-[280px] w-full px-4">
+                <div className="h-[300px] w-full px-4 mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -367,52 +399,35 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                         cx="50%"
                         cy="50%"
                         innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={3}
+                        outerRadius={110}
+                        paddingAngle={4}
                         dataKey="value"
-                        labelLine={false}
-                        label={renderCustomizedLabel}
+                        strokeWidth={3}
+                        stroke="#ffffff"
                         animationDuration={1200}
                         animationBegin={400}
-                        stroke="#ffffff"
-                        strokeWidth={2}
                       >
                         {riskProfile?.allocation.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={entry.color}
-                            className="drop-shadow-sm"
+                            className="drop-shadow-md"
                           />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={tooltipFormatter}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #f0f0f0',
-                          borderRadius: '8px', 
-                          boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.08)',
-                          padding: '8px 12px',
-                          fontSize: '0.875rem'
-                        }}
-                      />
+                      <Tooltip content={customizedTooltip} />
                       <Legend 
+                        content={renderLegend}
                         layout="horizontal" 
-                        verticalAlign="bottom" 
+                        verticalAlign="bottom"
                         align="center"
-                        formatter={legendFormatter}
-                        wrapperStyle={{ 
-                          paddingTop: 20,
-                          fontSize: '0.875rem',
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          justifyContent: 'center'
-                        }}
-                        iconSize={10}
-                        iconType="circle"
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                </div>
+                
+                <div className="text-center mt-2 px-6">
+                  <p className="text-foreground font-medium">{riskProfile?.summary}</p>
                 </div>
               </div>
 
@@ -439,11 +454,26 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
           </CardContent>
           
           <CardFooter className="flex flex-col gap-3 border-t bg-muted/40 p-4">
-            <Button onClick={handleChatWithProfile} className="w-full gap-2">
+            <Button 
+              onClick={handleChatWithProfile} 
+              className="w-full gap-2"
+            >
               <MessageSquare size={16} />
               Get personalized stock recommendations
             </Button>
-            <Button onClick={handleReset} variant="outline" className="w-full">
+            <Button 
+              onClick={handleExploreStrategy}
+              variant="secondary"
+              className="w-full gap-2 group hover:shadow-md transition-all"
+            >
+              <Sparkles size={16} className="text-primary group-hover:animate-pulse" />
+              <span>Explore Strategy</span>
+            </Button>
+            <Button 
+              onClick={handleReset} 
+              variant="outline" 
+              className="w-full"
+            >
               Retake Assessment
             </Button>
           </CardFooter>
