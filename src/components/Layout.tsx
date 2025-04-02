@@ -1,13 +1,15 @@
+
 import React, { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, X, BarChart2, MessageSquare, ChevronRight, PieChart, BookOpen, Bell, Settings, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Link, useLocation } from "react-router-dom";
 
 type SidebarItem = {
   name: string;
   icon: React.ReactNode;
-  active?: boolean;
+  path: string;
 };
 
 type LayoutProps = {
@@ -18,14 +20,21 @@ type LayoutProps = {
 const Layout = ({ children, title = "StockWise AI" }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const location = useLocation();
 
   const sidebarItems: SidebarItem[] = [
-    { name: "Chat", icon: <MessageSquare size={20} />, active: true },
-    { name: "Market Overview", icon: <BarChart2 size={20} /> },
-    { name: "My Portfolio", icon: <PieChart size={20} /> },
-    { name: "Learn", icon: <BookOpen size={20} /> },
-    { name: "Alerts", icon: <Bell size={20} /> },
+    { name: "Chat", icon: <MessageSquare size={20} />, path: "/" },
+    { name: "Market Overview", icon: <BarChart2 size={20} />, path: "/market" },
+    { name: "My Portfolio", icon: <PieChart size={20} />, path: "/portfolio" },
+    { name: "Learn", icon: <BookOpen size={20} />, path: "/learn" },
+    { name: "Alerts", icon: <Bell size={20} />, path: "/alerts" },
   ];
+
+  const closeSidebarIfMobile = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -54,25 +63,34 @@ const Layout = ({ children, title = "StockWise AI" }: LayoutProps) => {
 
         <nav className="mt-6 flex flex-1 flex-col px-3">
           <div className="space-y-1">
-            {sidebarItems.map((item) => (
-              <Button
-                key={item.name}
-                variant={item.active ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-3 px-3",
-                  item.active && "font-medium"
-                )}
-              >
-                {item.icon}
-                <span>{item.name}</span>
-                {item.active && (
-                  <ChevronRight
-                    size={16}
-                    className="ml-auto text-muted-foreground"
-                  />
-                )}
-              </Button>
-            ))}
+            {sidebarItems.map((item) => {
+              const isActive = 
+                (item.path === "/" && location.pathname === "/") || 
+                (item.path !== "/" && location.pathname.startsWith(item.path));
+              
+              return (
+                <Button
+                  key={item.name}
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 px-3 transition-all duration-200",
+                    isActive && "font-medium"
+                  )}
+                  asChild
+                >
+                  <Link to={item.path} onClick={closeSidebarIfMobile}>
+                    {item.icon}
+                    <span>{item.name}</span>
+                    {isActive && (
+                      <ChevronRight
+                        size={16}
+                        className="ml-auto text-muted-foreground"
+                      />
+                    )}
+                  </Link>
+                </Button>
+              );
+            })}
           </div>
         </nav>
 
