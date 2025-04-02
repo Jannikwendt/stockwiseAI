@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Send, Sparkles, Bot, User as UserIcon, RefreshCw } from "lucide-react";
+import { Send, Sparkles, Bot, User as UserIcon, RefreshCw, MessageSquare } from "lucide-react";
 import Tooltip from "@/components/Tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Message = {
   id: string;
@@ -26,6 +27,9 @@ const ChatInterface = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [typingText, setTypingText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +37,42 @@ const ChatInterface = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, typingText]);
+
+  // Typing animation effect
+  useEffect(() => {
+    let typingTimer: NodeJS.Timeout;
+    
+    if (isTyping && typingText) {
+      const responseText = typingText;
+      
+      if (currentTypeIndex < responseText.length) {
+        typingTimer = setTimeout(() => {
+          setCurrentTypeIndex(prev => prev + 1);
+        }, 15); // Speed of typing
+      } else {
+        setIsTyping(false);
+        setIsLoading(false);
+        
+        // Add the fully typed message to the messages list
+        setMessages(prev => [
+          ...prev, 
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: responseText,
+            timestamp: new Date(),
+          }
+        ]);
+        
+        // Reset for next typing animation
+        setTypingText("");
+        setCurrentTypeIndex(0);
+      }
+    }
+    
+    return () => clearTimeout(typingTimer);
+  }, [isTyping, currentTypeIndex, typingText]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -67,15 +106,10 @@ const ChatInterface = () => {
         responseText = "I understand you're interested in learning more about investing. As a beginner, it's important to start with fundamentals. Would you like me to explain some basic investment concepts, or are you looking for specific stock information?";
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: responseText,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
+      // Start typing animation instead of adding message directly
+      setTypingText(responseText);
+      setIsTyping(true);
+      setCurrentTypeIndex(0);
     }, 1500);
   };
 
@@ -115,7 +149,7 @@ const ChatInterface = () => {
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 break-words">
             <div className="prose prose-sm dark:prose-invert">
               {message.content.split(/\b(P\/E ratio|volatility|ETFs)\b/).map((part, i) => {
                 if (part === "P/E ratio") {
@@ -158,6 +192,50 @@ const ChatInterface = () => {
     );
   };
 
+  // Component for the typing animation
+  const TypingIndicator = () => {
+    return (
+      <div className="mb-4 flex w-full justify-start">
+        <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-card-foreground">
+          <div className="mt-1 shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Bot size={16} />
+            </div>
+          </div>
+          <div className="flex-1 break-words">
+            <div className="prose prose-sm dark:prose-invert">
+              {typingText.substring(0, currentTypeIndex)}
+              <span className="ml-1 inline-block h-4 w-2 animate-pulse rounded-full bg-primary"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Message placeholder for where API responses will be injected
+  const MessagePlaceholder = () => {
+    return (
+      <div className="mb-4 flex w-full justify-start">
+        <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border/50 bg-card/50 px-4 py-3 text-card-foreground/50">
+          <div className="mt-1 shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/5 text-primary/50">
+              <MessageSquare size={16} />
+            </div>
+          </div>
+          <div className="flex-1">
+            <Skeleton className="mb-2 h-4 w-[250px]" />
+            <Skeleton className="mb-2 h-4 w-[180px]" />
+            <Skeleton className="h-4 w-[120px]" />
+            <div className="mt-2 text-xs opacity-50">
+              Waiting for response...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1 px-4 py-4">
@@ -165,12 +243,18 @@ const ChatInterface = () => {
           {messages.map((message) => (
             <ChatBubble key={message.id} message={message} />
           ))}
-          {isLoading && (
+          
+          {isTyping && <TypingIndicator />}
+          
+          {isLoading && !isTyping && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <RefreshCw size={14} className="animate-spin" />
               <span>StockWise AI is thinking...</span>
             </div>
           )}
+          
+          {!isLoading && !isTyping && <MessagePlaceholder />}
+          
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
@@ -192,14 +276,14 @@ const ChatInterface = () => {
               onKeyDown={handleKeyDown}
               placeholder="Ask about stocks, concepts, or get recommendations..."
               className="pr-10"
-              disabled={isLoading}
+              disabled={isLoading || isTyping}
             />
             <Button
               variant="ghost"
               size="icon"
               className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
               onClick={handleSendMessage}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isTyping}
             >
               <Send size={16} className={input.trim() ? "text-primary" : ""} />
             </Button>
