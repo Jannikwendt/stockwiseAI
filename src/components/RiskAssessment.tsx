@@ -4,9 +4,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { PieChart as PieChartIcon, ArrowRight, CheckCircle2 } from "lucide-react";
+import { 
+  PieChart as PieChartIcon, 
+  ArrowRight, 
+  ArrowLeft, 
+  CheckCircle2, 
+  ChevronRight,
+  MessageSquare
+} from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Question = {
   id: string;
@@ -20,55 +29,53 @@ type Question = {
 
 const questions: Question[] = [
   {
-    id: "q1",
-    question: "How long do you plan to invest your money?",
+    id: "experience",
+    question: "How familiar are you with investing?",
     options: [
-      { value: "short", label: "Less than 1 year", score: 1 },
-      { value: "medium", label: "1-5 years", score: 2 },
-      { value: "long", label: "More than 5 years", score: 3 },
+      { value: "beginner", label: "Beginner", score: 1 },
+      { value: "some", label: "Some Experience", score: 2 },
+      { value: "experienced", label: "Very Experienced", score: 3 },
     ],
   },
   {
-    id: "q2",
-    question: "If your investment dropped 20% in value, what would you do?",
+    id: "risk",
+    question: "How would you react if your portfolio lost 20% in a short time?",
     options: [
-      { value: "sell", label: "Sell immediately to prevent further losses", score: 1 },
-      { value: "partial", label: "Sell some and keep some", score: 2 },
-      { value: "hold", label: "Hold and wait for recovery", score: 3 },
-      { value: "buy", label: "Buy more at the lower price", score: 4 },
+      { value: "sell", label: "Sell everything", score: 1 },
+      { value: "wait", label: "Wait it out", score: 2 },
+      { value: "buy", label: "Buy more while it's low", score: 3 },
     ],
   },
   {
-    id: "q3",
-    question: "What's your primary investment goal?",
+    id: "goal",
+    question: "What is your primary goal for investing?",
     options: [
-      { value: "preserve", label: "Preserve capital with minimal risk", score: 1 },
-      { value: "income", label: "Generate income through dividends", score: 2 },
-      { value: "growth", label: "Growth with moderate risk", score: 3 },
-      { value: "aggressive", label: "Maximum growth with higher risk", score: 4 },
+      { value: "preserve", label: "Capital preservation", score: 1 },
+      { value: "balanced", label: "Balanced growth", score: 2 },
+      { value: "aggressive", label: "Aggressive growth", score: 3 },
     ],
   },
   {
-    id: "q4",
-    question: "How much investment experience do you have?",
+    id: "timeHorizon",
+    question: "When do you plan to use this money?",
     options: [
-      { value: "none", label: "None or very little", score: 1 },
-      { value: "some", label: "Some experience with basic investments", score: 2 },
-      { value: "experienced", label: "Experienced investor", score: 3 },
+      { value: "short", label: "Within 3 years", score: 1 },
+      { value: "medium", label: "3 to 10 years", score: 2 },
+      { value: "long", label: "More than 10 years", score: 3 },
     ],
   },
   {
-    id: "q5",
-    question: "What percentage of your total savings are you investing?",
+    id: "volatility",
+    question: "Would you accept more short-term ups and downs for the chance of higher returns?",
     options: [
-      { value: "small", label: "Less than 25%", score: 3 },
-      { value: "moderate", label: "25% to 50%", score: 2 },
-      { value: "substantial", label: "More than 50%", score: 1 },
+      { value: "no", label: "No", score: 1 },
+      { value: "maybe", label: "Maybe", score: 2 },
+      { value: "yes", label: "Yes", score: 3 },
     ],
   },
 ];
 
-type RiskProfile = "Conservative" | "Moderate" | "Growth" | "Aggressive";
+type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
 
 interface RiskProfileData {
   profile: RiskProfile;
@@ -78,76 +85,63 @@ interface RiskProfileData {
     value: number;
     color: string;
   }[];
-  recommendations: string[];
+  keyPoints: string[];
+  suitableFor: string;
 }
 
 const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   Conservative: {
     profile: "Conservative",
-    description: "You prefer stability and low risk, prioritizing capital preservation over high returns.",
+    description: "You prefer stability and lower risk. Your portfolio is designed to preserve capital while generating modest growth and income.",
     allocation: [
-      { name: "Bonds", value: 60, color: "#8884d8" },
-      { name: "Large Cap", value: 25, color: "#82ca9d" },
-      { name: "Cash", value: 10, color: "#ffc658" },
-      { name: "Int'l", value: 5, color: "#ff8042" },
+      { name: "Bonds", value: 50, color: "#8884d8" },
+      { name: "Large Cap Stocks", value: 25, color: "#82ca9d" },
+      { name: "Cash", value: 15, color: "#ffc658" },
+      { name: "International", value: 10, color: "#ff8042" },
     ],
-    recommendations: [
-      "Treasury bonds and high-quality corporate bonds",
-      "Dividend-focused ETFs like VYM or SCHD",
-      "Low-volatility ETFs like SPLV or USMV",
-      "Blue-chip stocks with stable histories"
-    ]
+    keyPoints: [
+      "Focus on capital preservation and income",
+      "Lower volatility and risk exposure",
+      "Emphasis on high-quality bonds and dividend stocks",
+      "More stable, predictable returns"
+    ],
+    suitableFor: "Investors nearing retirement or with short time horizons (1-3 years)"
   },
   Moderate: {
     profile: "Moderate",
-    description: "You seek a balance between growth and security, accepting some risk for potentially higher returns.",
+    description: "You seek a balance between growth and safety. Your portfolio aims for long-term growth while managing volatility through diversification.",
     allocation: [
-      { name: "Bonds", value: 40, color: "#8884d8" },
-      { name: "Large Cap", value: 35, color: "#82ca9d" },
-      { name: "Mid Cap", value: 10, color: "#ffc658" },
-      { name: "Int'l", value: 10, color: "#ff8042" },
-      { name: "Cash", value: 5, color: "#8dd1e1" },
+      { name: "Large Cap Stocks", value: 40, color: "#82ca9d" },
+      { name: "Bonds", value: 30, color: "#8884d8" },
+      { name: "International", value: 15, color: "#ff8042" },
+      { name: "Mid Cap Stocks", value: 10, color: "#8dd1e1" },
+      { name: "Cash", value: 5, color: "#ffc658" },
     ],
-    recommendations: [
-      "Balanced ETFs like AOK or AOM",
-      "S&P 500 index funds like VOO or SPY",
-      "Total market ETFs like VTI",
-      "Some sector-specific ETFs in stable sectors"
-    ]
-  },
-  Growth: {
-    profile: "Growth",
-    description: "You aim for substantial growth and can tolerate market fluctuations for potentially higher long-term returns.",
-    allocation: [
-      { name: "Large Cap", value: 45, color: "#82ca9d" },
-      { name: "Mid Cap", value: 20, color: "#ffc658" },
-      { name: "Int'l", value: 15, color: "#ff8042" },
-      { name: "Small Cap", value: 10, color: "#8dd1e1" },
-      { name: "Bonds", value: 10, color: "#8884d8" },
+    keyPoints: [
+      "Balance between growth and income",
+      "Moderate volatility with diversification",
+      "Mix of growth assets and defensive positions",
+      "Reasonable returns with controlled risk"
     ],
-    recommendations: [
-      "Growth-oriented ETFs like VUG or QQQ",
-      "Mid-cap ETFs like VO or IJH",
-      "International ETFs like VXUS or EFA",
-      "Targeted sector ETFs in technology or healthcare"
-    ]
+    suitableFor: "Investors with medium time horizons (3-10 years) seeking balanced returns"
   },
   Aggressive: {
     profile: "Aggressive",
-    description: "You seek maximum growth and can handle significant volatility, focusing on long-term appreciation.",
+    description: "You prioritize growth potential and can tolerate higher volatility. Your portfolio is positioned for maximum long-term capital appreciation.",
     allocation: [
-      { name: "Large Cap", value: 35, color: "#82ca9d" },
-      { name: "Mid Cap", value: 25, color: "#ffc658" },
-      { name: "Small Cap", value: 15, color: "#8dd1e1" },
-      { name: "Int'l", value: 20, color: "#ff8042" },
+      { name: "Large Cap Stocks", value: 45, color: "#82ca9d" },
+      { name: "International", value: 25, color: "#ff8042" },
+      { name: "Mid Cap Stocks", value: 15, color: "#8dd1e1" },
+      { name: "Small Cap Stocks", value: 10, color: "#d0ed57" },
       { name: "Bonds", value: 5, color: "#8884d8" },
     ],
-    recommendations: [
-      "Growth ETFs like VUG or VONG",
-      "Technology-focused ETFs like VGT or XLK",
-      "Emerging market ETFs like VWO or IEMG",
-      "Small-cap ETFs like VB or IJR"
-    ]
+    keyPoints: [
+      "Focus on capital appreciation and growth",
+      "Higher volatility with greater return potential",
+      "Emphasis on equities across market caps",
+      "International diversification for growth opportunities"
+    ],
+    suitableFor: "Younger investors with long time horizons (10+ years) and higher risk tolerance"
   },
 };
 
@@ -157,10 +151,11 @@ interface RiskAssessmentProps {
 }
 
 const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
   const [riskProfile, setRiskProfile] = useState<RiskProfileData | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const handleAnswer = (questionId: string, value: string) => {
     setAnswers((prev) => ({
@@ -170,8 +165,15 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   };
 
   const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    
+    if (currentStep < questions.length - 1) {
+      setTimeout(() => {
+        setCurrentStep((prev) => prev + 1);
+        setIsAnimating(false);
+      }, 300);
     } else {
       // Calculate risk score
       let totalScore = 0;
@@ -184,13 +186,12 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
       });
 
       // Determine risk profile based on score
+      // Max possible score: 15 (5 questions × max score 3)
       let profile: RiskProfile;
       if (totalScore <= 8) {
         profile = "Conservative";
       } else if (totalScore <= 12) {
         profile = "Moderate";
-      } else if (totalScore <= 16) {
-        profile = "Growth";
       } else {
         profile = "Aggressive";
       }
@@ -201,24 +202,43 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
       if (onCompleted) {
         onCompleted(riskProfiles[profile]);
       }
+      
+      setIsAnimating(false);
     }
   };
 
+  const handlePrevious = () => {
+    if (isAnimating || currentStep === 0) return;
+    
+    setIsAnimating(true);
+    
+    setTimeout(() => {
+      setCurrentStep((prev) => prev - 1);
+      setIsAnimating(false);
+    }, 300);
+  };
+
   const handleReset = () => {
-    setCurrentQuestion(0);
+    setCurrentStep(0);
     setAnswers({});
     setCompleted(false);
     setRiskProfile(null);
   };
 
-  const question = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const handleChatWithProfile = () => {
+    // This is where you'd trigger the chatbot with the user's risk profile
+    console.log("Starting chat with risk profile:", riskProfile?.profile);
+    // Implement actual chat trigger functionality here
+  };
+
+  const question = questions[currentStep];
+  const progress = ((currentStep + 1) / questions.length) * 100;
 
   return (
-    <Card className={cn("w-full max-w-xl overflow-hidden", className)}>
+    <Card className={cn("w-full max-w-xl overflow-hidden shadow-lg", className)}>
       {!completed ? (
         <>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <PieChartIcon size={20} className="text-primary" />
               <CardTitle>Risk Tolerance Assessment</CardTitle>
@@ -226,70 +246,79 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
             <CardDescription>
               Answer these questions to determine your investment risk profile.
             </CardDescription>
-            <div className="relative mt-2 h-1 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="absolute left-0 top-0 h-full bg-primary transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
+            <div className="mt-4 space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Question {currentStep + 1} of {questions.length}</span>
+                <span>{Math.round(progress)}% completed</span>
+              </div>
+              <Progress value={progress} className="h-2" />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Question {currentQuestion + 1} of {questions.length}
-            </p>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">{question.question}</h3>
-              <RadioGroup
-                value={answers[question.id] || ""}
-                onValueChange={(value) => handleAnswer(question.id, value)}
+          
+          <CardContent className="min-h-[260px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
               >
-                <div className="space-y-2">
+                <h3 className="text-xl font-medium">{question.question}</h3>
+                <RadioGroup
+                  value={answers[question.id] || ""}
+                  onValueChange={(value) => handleAnswer(question.id, value)}
+                  className="space-y-3"
+                >
                   {question.options.map((option) => (
                     <div
                       key={option.value}
                       className={cn(
-                        "flex cursor-pointer items-center rounded-md border border-border p-3 transition-colors",
+                        "flex cursor-pointer items-center rounded-lg border p-4 transition-all duration-200",
                         answers[question.id] === option.value
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-accent"
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-input hover:border-primary/50 hover:bg-muted"
                       )}
                       onClick={() => handleAnswer(question.id, option.value)}
                     >
                       <RadioGroupItem
                         id={option.value}
                         value={option.value}
-                        className="mr-2"
+                        className="mr-3"
                       />
                       <Label
                         htmlFor={option.value}
-                        className="flex-1 cursor-pointer"
+                        className="flex-1 cursor-pointer font-medium"
                       >
                         {option.label}
                       </Label>
                     </div>
                   ))}
-                </div>
-              </RadioGroup>
-            </div>
+                </RadioGroup>
+              </motion.div>
+            </AnimatePresence>
           </CardContent>
-          <CardFooter className="flex justify-between">
+          
+          <CardFooter className="flex justify-between border-t bg-muted/40 p-4">
             <Button
               variant="outline"
-              onClick={() =>
-                setCurrentQuestion((prev) => Math.max(0, prev - 1))
-              }
-              disabled={currentQuestion === 0}
+              onClick={handlePrevious}
+              disabled={currentStep === 0 || isAnimating}
+              className="gap-1"
             >
-              Previous
+              <ArrowLeft size={16} />
+              Back
             </Button>
             <Button
               onClick={handleNext}
-              disabled={!answers[question.id]}
+              disabled={!answers[question.id] || isAnimating}
               className="gap-1"
             >
-              {currentQuestion < questions.length - 1 ? (
+              {currentStep < questions.length - 1 ? (
                 <>
-                  Next <ArrowRight size={16} />
+                  Next
+                  <ArrowRight size={16} />
                 </>
               ) : (
                 "View Results"
@@ -299,31 +328,35 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
         </>
       ) : (
         <>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-success" />
-              <CardTitle>Your Risk Profile</CardTitle>
+              <CheckCircle2 size={20} className="text-green-500" />
+              <CardTitle>Your Investment Profile</CardTitle>
             </div>
             <CardDescription>
               Based on your answers, we've determined your investor profile.
             </CardDescription>
           </CardHeader>
+          
           <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-2xl font-semibold text-primary">
-                  {riskProfile?.profile}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="space-y-6"
+            >
+              <div className="rounded-lg border border-primary/10 bg-primary/5 p-4">
+                <h3 className="text-2xl font-bold text-primary mb-2">
+                  {riskProfile?.profile} Investor
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-muted-foreground">
                   {riskProfile?.description}
                 </p>
               </div>
 
-              <div className="rounded-md border border-border bg-card/50 p-4">
-                <h4 className="mb-4 text-sm font-medium">
-                  Recommended Asset Allocation
-                </h4>
-                <div className="h-[200px] w-full">
+              <div>
+                <h4 className="text-base font-medium mb-3">Recommended Asset Allocation</h4>
+                <div className="h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -331,9 +364,11 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
-                        outerRadius={80}
+                        outerRadius={90}
                         paddingAngle={2}
                         dataKey="value"
+                        animationDuration={1000}
+                        animationBegin={400}
                         label={({
                           cx,
                           cy,
@@ -354,6 +389,7 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                               dominantBaseline="central"
                               fill="currentColor"
                               fontSize={12}
+                              fontWeight={500}
                             >
                               {`${(percent * 100).toFixed(0)}%`}
                             </text>
@@ -371,28 +407,34 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                 </div>
               </div>
 
-              <div>
-                <h4 className="mb-2 text-sm font-medium">
-                  Suggested Investments
-                </h4>
-                <ul className="space-y-1">
-                  {riskProfile?.recommendations.map((rec, index) => (
+              <div className="space-y-3">
+                <h4 className="text-base font-medium">Key Characteristics</h4>
+                <ul className="space-y-2">
+                  {riskProfile?.keyPoints.map((point, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                      className="flex items-start gap-2 text-sm"
                     >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
-                        {index + 1}
-                      </span>
-                      <span>{rec}</span>
+                      <ChevronRight size={16} className="mt-0.5 text-primary flex-shrink-0" />
+                      <span>{point}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-            </div>
+
+              <div className="rounded-lg border bg-muted/50 p-4">
+                <h4 className="text-sm font-medium mb-1">Best suited for:</h4>
+                <p className="text-sm text-muted-foreground">{riskProfile?.suitableFor}</p>
+              </div>
+            </motion.div>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleReset} className="w-full">
+          
+          <CardFooter className="flex flex-col gap-3 border-t bg-muted/40 p-4">
+            <Button onClick={handleChatWithProfile} className="w-full gap-2">
+              <MessageSquare size={16} />
+              Get personalized stock recommendations
+            </Button>
+            <Button onClick={handleReset} variant="outline" className="w-full">
               Retake Assessment
             </Button>
           </CardFooter>
