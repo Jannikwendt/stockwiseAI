@@ -234,6 +234,12 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   const question = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
 
+  // Custom render function for the pie chart labels
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    // No labels to be rendered inside the pie chart - we'll use the Legend instead
+    return null;
+  };
+
   return (
     <Card className={cn("w-full max-w-xl overflow-hidden shadow-lg", className)}>
       {!completed ? (
@@ -355,8 +361,8 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
               </div>
 
               <div>
-                <h4 className="text-base font-medium mb-3">Recommended Asset Allocation</h4>
-                <div className="h-[250px] w-full">
+                <h4 className="text-base font-medium mb-4">Recommended Asset Allocation</h4>
+                <div className="h-[240px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -367,41 +373,38 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
                         outerRadius={90}
                         paddingAngle={2}
                         dataKey="value"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
                         animationDuration={1000}
                         animationBegin={400}
-                        label={({
-                          cx,
-                          cy,
-                          midAngle,
-                          innerRadius,
-                          outerRadius,
-                          percent,
-                        }) => {
-                          const radius =
-                            innerRadius + (outerRadius - innerRadius) * 1.4;
-                          const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                          const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              textAnchor={x > cx ? "start" : "end"}
-                              dominantBaseline="central"
-                              fill="currentColor"
-                              fontSize={12}
-                              fontWeight={500}
-                            >
-                              {`${(percent * 100).toFixed(0)}%`}
-                            </text>
-                          );
-                        }}
                       >
                         {riskProfile?.allocation.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color} 
+                            stroke="transparent"
+                          />
                         ))}
                       </Pie>
-                      <Legend verticalAlign="bottom" height={36} />
-                      <Tooltip />
+                      <Tooltip 
+                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #f0f0f0',
+                          borderRadius: '6px', 
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Legend 
+                        layout="horizontal" 
+                        verticalAlign="bottom" 
+                        align="center"
+                        formatter={(value, entry, index) => {
+                          const item = riskProfile?.allocation[index];
+                          return `${value}: ${item?.value}%`;
+                        }}
+                        wrapperStyle={{ paddingTop: 20 }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
