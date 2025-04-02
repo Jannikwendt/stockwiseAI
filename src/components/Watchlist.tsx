@@ -1,11 +1,14 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Plus, X, TrendingUp, TrendingDown, Sparkles, Search, Star, StarOff } from "lucide-react";
+import { Plus, X, TrendingUp, TrendingDown, Sparkles, Search, Star, StarOff, Trash, Clock } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 type Stock = {
   id: string;
@@ -14,6 +17,7 @@ type Stock = {
   price: number;
   change: number;
   changePercent: number;
+  updatedAt: Date;
 };
 
 const defaultStocks: Stock[] = [
@@ -24,6 +28,7 @@ const defaultStocks: Stock[] = [
     price: 178.72,
     change: 2.34,
     changePercent: 1.32,
+    updatedAt: new Date(),
   },
   {
     id: "2",
@@ -32,6 +37,7 @@ const defaultStocks: Stock[] = [
     price: 405.63,
     change: -1.20,
     changePercent: -0.29,
+    updatedAt: new Date(),
   },
   {
     id: "3",
@@ -40,6 +46,7 @@ const defaultStocks: Stock[] = [
     price: 172.63,
     change: 4.82,
     changePercent: 2.87,
+    updatedAt: new Date(),
   },
   {
     id: "4",
@@ -48,6 +55,7 @@ const defaultStocks: Stock[] = [
     price: 178.75,
     change: 1.45,
     changePercent: 0.82,
+    updatedAt: new Date(),
   },
 ];
 
@@ -59,6 +67,7 @@ const popularStocks: Stock[] = [
     price: 916.05,
     change: 15.83,
     changePercent: 1.76,
+    updatedAt: new Date(),
   },
   {
     id: "6",
@@ -67,6 +76,7 @@ const popularStocks: Stock[] = [
     price: 164.34,
     change: 1.05,
     changePercent: 0.64,
+    updatedAt: new Date(),
   },
   {
     id: "7",
@@ -75,6 +85,7 @@ const popularStocks: Stock[] = [
     price: 478.22,
     change: 4.32,
     changePercent: 0.91,
+    updatedAt: new Date(),
   },
   {
     id: "8",
@@ -83,6 +94,7 @@ const popularStocks: Stock[] = [
     price: 197.45,
     change: -2.31,
     changePercent: -1.16,
+    updatedAt: new Date(),
   },
 ];
 
@@ -91,16 +103,69 @@ interface WatchlistProps {
 }
 
 const Watchlist = ({ className }: WatchlistProps) => {
-  const [watchlist, setWatchlist] = useState<Stock[]>(defaultStocks);
+  const [watchlist, setWatchlist] = useState<Stock[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+
+  // Load watchlist from localStorage on component mount
+  useEffect(() => {
+    const savedWatchlist = localStorage.getItem("watchlist");
+    if (savedWatchlist) {
+      try {
+        const parsedWatchlist = JSON.parse(savedWatchlist);
+        // Convert string dates back to Date objects
+        const watchlistWithDates = parsedWatchlist.map((stock: any) => ({
+          ...stock,
+          updatedAt: new Date(stock.updatedAt)
+        }));
+        setWatchlist(watchlistWithDates);
+      } catch (error) {
+        console.error("Error parsing watchlist from localStorage:", error);
+        setWatchlist(defaultStocks);
+      }
+    } else {
+      setWatchlist(defaultStocks);
+    }
+  }, []);
+
+  // Save watchlist to localStorage whenever it changes
+  useEffect(() => {
+    if (watchlist.length > 0) {
+      localStorage.setItem("watchlist", JSON.stringify(watchlist));
+    }
+  }, [watchlist]);
 
   const handleRemoveStock = (id: string) => {
     setWatchlist((prev) => prev.filter((stock) => stock.id !== id));
+    toast({
+      title: "Stock removed",
+      description: "The stock has been removed from your watchlist",
+    });
   };
 
   const handleAddStock = (stock: Stock) => {
     if (watchlist.some((s) => s.id === stock.id)) return;
-    setWatchlist((prev) => [...prev, stock]);
+    
+    // Add the current timestamp
+    const stockWithTimestamp = {
+      ...stock,
+      updatedAt: new Date()
+    };
+    
+    setWatchlist((prev) => [...prev, stockWithTimestamp]);
+    toast({
+      title: "Stock added",
+      description: `${stock.symbol} has been added to your watchlist`,
+    });
+  };
+
+  const handleClearWatchlist = () => {
+    setWatchlist([]);
+    localStorage.removeItem("watchlist");
+    toast({
+      title: "Watchlist cleared",
+      description: "All stocks have been removed from your watchlist",
+    });
   };
 
   const filteredPopularStocks = popularStocks.filter(
@@ -179,28 +244,54 @@ const Watchlist = ({ className }: WatchlistProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-2 pr-1">
-          {watchlist.length > 0 ? (
-            watchlist.map((stock) => (
-              <StockRow
-                key={stock.id}
-                stock={stock}
-                actionIcon={<X size={16} />}
-                onAction={() => handleRemoveStock(stock.id)}
-              />
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Star size={40} className="mb-2 text-muted-foreground/50" />
-              <p className="text-sm font-medium text-muted-foreground">
-                Your watchlist is empty
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Add stocks to track their performance
-              </p>
-            </div>
-          )}
+          <AnimatePresence>
+            {watchlist.length > 0 ? (
+              watchlist.map((stock) => (
+                <motion.div
+                  key={stock.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <StockRow
+                    stock={stock}
+                    actionIcon={<X size={16} />}
+                    onAction={() => handleRemoveStock(stock.id)}
+                  />
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-8 text-center"
+              >
+                <Star size={40} className="mb-2 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  Your watchlist is empty
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Add stocks to track their performance
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </CardContent>
+      {watchlist.length > 0 && (
+        <CardFooter className="pt-0">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full gap-2 text-destructive hover:bg-destructive/10"
+            onClick={handleClearWatchlist}
+          >
+            <Trash size={14} />
+            Clear Watchlist
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };
@@ -248,6 +339,10 @@ const StockRow = ({ stock, actionIcon, onAction }: StockRowProps) => {
               {isPositive ? "+" : ""}
               {stock.change.toFixed(2)} ({stock.changePercent.toFixed(2)}%)
             </p>
+          </div>
+          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+            <Clock size={10} />
+            <span>{format(stock.updatedAt, 'MMM d, h:mm a')}</span>
           </div>
         </div>
         <Button
