@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -114,18 +113,7 @@ const Layout = ({ children, title = "StockWise AI" }: LayoutProps) => {
           )}
           <h1 className="text-lg font-medium">{title}</h1>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9 gap-1.5"
-              onClick={() => {
-                // In a real app, this would navigate to the risk assessment
-                console.log("Navigate to risk assessment");
-              }}
-            >
-              <PieChart size={16} />
-              <span>Risk Assessment</span>
-            </Button>
+            {/* This div is kept empty intentionally to maintain the header layout */}
           </div>
         </header>
 
