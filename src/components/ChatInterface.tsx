@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,17 +8,18 @@ import { Send, Sparkles, Bot, User as UserIcon } from "lucide-react";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-const ChatInterface = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today? You can ask me about stocks, investment concepts, or get personalized recommendations.",
-      timestamp: new Date(),
-    },
-  ]);
+interface ChatInterfaceProps {
+  initialRiskProfile?: "Aggressive" | "Moderate" | "Conservative";
+}
 
+const ChatInterface = ({ initialRiskProfile }: ChatInterfaceProps) => {
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: Date;
+  }>>([]);
+  
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [typingText, setTypingText] = useState("");
@@ -25,6 +27,22 @@ const ChatInterface = () => {
   const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
 
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize with welcome message based on risk profile
+    const welcomeMessage = initialRiskProfile 
+      ? `Hello! I'm StockWise AI, your personal investment assistant. I see that you have an ${initialRiskProfile} risk profile. How can I help with your investment needs today?`
+      : "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today? You can ask me about stocks, investment concepts, or get personalized recommendations.";
+    
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content: welcomeMessage,
+        timestamp: new Date(),
+      },
+    ]);
+  }, [initialRiskProfile]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,7 +87,7 @@ const ChatInterface = () => {
           messages: [
             {
               role: "system",
-              content: "You're a helpful financial assistant. The user's risk profile is Aggressive.",
+              content: `You're a helpful financial assistant. The user's risk profile is ${initialRiskProfile || "Aggressive"}.`,
             },
             { role: "user", content: input },
           ],

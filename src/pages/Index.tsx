@@ -1,5 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChatInterface from "@/components/ChatInterface";
@@ -17,14 +17,51 @@ import Tooltip from "@/components/Tooltip";
 
 const Index = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(true);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [riskAssessmentOpen, setRiskAssessmentOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("chat");
+  const [userRiskProfile, setUserRiskProfile] = useState<"Aggressive" | "Moderate" | "Conservative" | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    if (location.state?.riskProfile) {
+      setUserRiskProfile(location.state.riskProfile);
+      setSelectedTab("chat");
+      toast({
+        title: `${location.state.riskProfile} Risk Profile Set`,
+        description: "Your chat assistant has been personalized to your risk tolerance.",
+      });
+      
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, toast]);
 
   const dismissWelcome = () => {
     setShowWelcome(false);
     toast({
       title: "Welcome to StockWise AI!",
       description: "Your AI-powered investment assistant is ready to help.",
+    });
+  };
+  
+  const handleRiskAssessmentCompleted = (profileData) => {
+    setUserRiskProfile(profileData.profile);
+    toast({
+      title: `${profileData.profile} Risk Profile Identified`,
+      description: "Complete your assessment to get personalized recommendations.",
+    });
+  };
+  
+  const handleChatWithProfile = (profile) => {
+    setUserRiskProfile(profile);
+    setRiskAssessmentOpen(false);
+    setSelectedTab("chat");
+    toast({
+      title: "Risk Profile Applied",
+      description: "Chat with your personalized investment assistant now.",
     });
   };
 
@@ -260,7 +297,7 @@ const Index = () => {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Tabs defaultValue="chat" className="w-full">
+            <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="w-full">
               <TabsList className="mb-4 w-full max-w-md">
                 <TabsTrigger value="chat" className="gap-1">
                   <Search size={16} />
@@ -277,7 +314,7 @@ const Index = () => {
               </TabsList>
               
               <TabsContent value="chat" className="h-[650px] rounded-lg border">
-                <ChatInterface />
+                <ChatInterface initialRiskProfile={userRiskProfile} />
               </TabsContent>
               
               <TabsContent value="charts">
@@ -361,7 +398,7 @@ const Index = () => {
           <div className="flex flex-col gap-6">
             <Watchlist />
             
-            <Dialog>
+            <Dialog open={riskAssessmentOpen} onOpenChange={setRiskAssessmentOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full gap-2">
                   <PieChart size={16} />
@@ -373,7 +410,10 @@ const Index = () => {
                 <DialogHeader>
                   <DialogTitle>Investor Risk Profile</DialogTitle>
                 </DialogHeader>
-                <RiskAssessment />
+                <RiskAssessment 
+                  onCompleted={handleRiskAssessmentCompleted}
+                  onChatWithProfile={handleChatWithProfile}
+                />
               </DialogContent>
             </Dialog>
             
