@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 
 type Question = {
   id: string;
@@ -153,11 +153,9 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
 interface RiskAssessmentProps {
   className?: string;
   onCompleted?: (profile: RiskProfileData) => void;
-  onChatWithProfile?: (profile: RiskProfile) => void;
 }
 
-const RiskAssessment = ({ className, onCompleted, onChatWithProfile }: RiskAssessmentProps) => {
-  const navigate = useNavigate();
+const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
@@ -230,11 +228,7 @@ const RiskAssessment = ({ className, onCompleted, onChatWithProfile }: RiskAsses
   };
 
   const handleChatWithProfile = () => {
-    if (riskProfile && onChatWithProfile) {
-      onChatWithProfile(riskProfile.profile);
-    } else if (riskProfile) {
-      navigate('/', { state: { riskProfile: riskProfile.profile } });
-    }
+    console.log("Starting chat with risk profile:", riskProfile?.profile);
   };
 
   const handleExploreStrategy = () => {
