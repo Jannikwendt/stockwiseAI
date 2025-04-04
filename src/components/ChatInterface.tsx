@@ -74,7 +74,7 @@ const ChatInterface = () => {
 
       const data = await res.json();
 
-      setTypingText(data.content);
+      setTypingText(data?.content || "Sorry, no response received from the AI service.");
       setIsTyping(true);
       setCurrentTypeIndex(0);
     } catch (error) {

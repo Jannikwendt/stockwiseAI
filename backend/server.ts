@@ -7,9 +7,13 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:5173' })); // your frontend URL
+app.use(cors({ origin: 'http://localhost:8080' }));
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Correct instantiation for project-based keys
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.openai.com/v1', // explicitly set base URL
+});
 
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;
@@ -21,9 +25,10 @@ app.post('/api/chat', async (req, res) => {
       temperature: 0.7,
     });
 
-    res.json(completion.choices[0].message);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.json({ content: completion.choices[0].message.content });
+  } catch (error: any) {
+    console.error('OpenAI API error:', error);
+    res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 });
 
