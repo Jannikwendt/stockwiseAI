@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Send, Sparkles, Bot, User as UserIcon, RefreshCw, MessageSquare } from "lucide-react";
 import Tooltip from "@/components/Tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
 
 type Message = {
   id: string;
@@ -20,7 +20,7 @@ const ChatInterface = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today? You can ask me about stocks, investment concepts, or get personalized recommendations.",
+      content: "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today?",
       timestamp: new Date(),
     },
   ]);
@@ -39,38 +39,30 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, typingText]);
 
-  // Typing animation effect
   useEffect(() => {
     let typingTimer: NodeJS.Timeout;
-    
     if (isTyping && typingText) {
       const responseText = typingText;
-      
       if (currentTypeIndex < responseText.length) {
         typingTimer = setTimeout(() => {
           setCurrentTypeIndex(prev => prev + 1);
-        }, 15); // Speed of typing
+        }, 15);
       } else {
         setIsTyping(false);
         setIsLoading(false);
-        
-        // Add the fully typed message to the messages list
         setMessages(prev => [
-          ...prev, 
+          ...prev,
           {
             id: Date.now().toString(),
             role: "assistant",
             content: responseText,
             timestamp: new Date(),
-          }
+          },
         ]);
-        
-        // Reset for next typing animation
         setTypingText("");
         setCurrentTypeIndex(0);
       }
     }
-    
     return () => clearTimeout(typingTimer);
   }, [isTyping, currentTypeIndex, typingText]);
 
@@ -84,33 +76,44 @@ const ChatInterface = () => {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Example responses to simulate AI behavior
-      let responseText = "";
-      const query = input.toLowerCase();
+    try {
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "You're a helpful financial assistant. The user's risk profile is Aggressive. Give them advice tailored to that profile.",
+            },
+            {
+              role: "user",
+              content: input,
+            },
+          ],
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          },
+        }
+      );
 
-      if (query.includes("apple") || query.includes("aapl")) {
-        responseText = "Apple Inc. (AAPL) is currently trading at $178.72. The stock has shown strong performance over the past year with a 15.3% increase. Analysts generally rate it as a 'Buy' with a price target of $195. Apple has a P/E ratio of 29.5, which is slightly higher than the technology sector average.";
-      } else if (query.includes("p/e ratio") || query.includes("pe ratio")) {
-        responseText = "The Price-to-Earnings (P/E) ratio is a valuation metric that compares a company's stock price to its earnings per share. A high P/E ratio may indicate that investors expect high growth rates in the future, while a low P/E ratio might suggest the company is undervalued or experiencing challenges.";
-      } else if (query.includes("volatility")) {
-        responseText = "Volatility measures how much a stock's price fluctuates over time. Higher volatility indicates larger price swings and is often associated with higher risk. For beginner investors, lower volatility stocks are generally recommended as they tend to be more stable.";
-      } else if (query.includes("recommend") || query.includes("suggestion")) {
-        responseText = "Based on your beginner investor profile, I would recommend considering Exchange-Traded Funds (ETFs) that track major indices like the S&P 500. These provide instant diversification and typically have lower fees. Some beginner-friendly ETFs include VOO, SPY, and VTI. Would you like me to explain more about any of these options?";
-      } else {
-        responseText = "I understand you're interested in learning more about investing. As a beginner, it's important to start with fundamentals. Would you like me to explain some basic investment concepts, or are you looking for specific stock information?";
-      }
-
-      // Start typing animation instead of adding message directly
-      setTypingText(responseText);
+      const reply = response.data.choices[0].message.content;
+      setTypingText(reply);
       setIsTyping(true);
       setCurrentTypeIndex(0);
-    }, 1500);
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      setTypingText("Sorry, there was an error reaching the AI service.");
+      setIsTyping(true);
+      setCurrentTypeIndex(0);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,22 +125,10 @@ const ChatInterface = () => {
 
   const ChatBubble = ({ message }: { message: Message }) => {
     const isUser = message.role === "user";
-
     return (
-      <div
-        className={cn(
-          "mb-4 flex w-full",
-          isUser ? "justify-end" : "justify-start"
-        )}
-      >
-        <div
-          className={cn(
-            "flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3",
-            isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-card text-card-foreground border border-border"
-          )}
-        >
+      <div className={cn("mb-4 flex w-full", isUser ? "justify-end" : "justify-start")}>
+        <div className={cn("flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3",
+          isUser ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground border border-border")}>
           <div className="mt-1 shrink-0">
             {isUser ? (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground text-primary">
@@ -153,38 +144,17 @@ const ChatInterface = () => {
             <div className="prose prose-sm dark:prose-invert">
               {message.content.split(/\b(P\/E ratio|volatility|ETFs)\b/).map((part, i) => {
                 if (part === "P/E ratio") {
-                  return (
-                    <Tooltip
-                      key={i}
-                      term="P/E ratio"
-                      explanation="Price-to-Earnings ratio compares a company's share price to its earnings per share. It helps investors determine if a stock is overvalued or undervalued."
-                    />
-                  );
+                  return <Tooltip key={i} term="P/E ratio" explanation="Price-to-Earnings ratio compares a company's share price to its earnings per share." />;
                 } else if (part === "volatility") {
-                  return (
-                    <Tooltip
-                      key={i}
-                      term="volatility"
-                      explanation="A measure of how much a stock's price fluctuates over time. Higher volatility generally indicates higher risk."
-                    />
-                  );
+                  return <Tooltip key={i} term="volatility" explanation="Volatility means how much a stock's price swings over time." />;
                 } else if (part === "ETFs") {
-                  return (
-                    <Tooltip
-                      key={i}
-                      term="ETFs"
-                      explanation="Exchange-Traded Funds are investment funds traded on stock exchanges that hold assets like stocks, bonds, or commodities. They typically track an index and offer diversification."
-                    />
-                  );
+                  return <Tooltip key={i} term="ETFs" explanation="Exchange-Traded Funds hold assets and trade like a stock, offering diversification." />;
                 }
                 return part;
               })}
             </div>
             <div className="mt-1 text-xs opacity-70">
-              {message.timestamp.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
           </div>
         </div>
@@ -192,81 +162,62 @@ const ChatInterface = () => {
     );
   };
 
-  // Component for the typing animation
-  const TypingIndicator = () => {
-    return (
-      <div className="mb-4 flex w-full justify-start">
-        <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-card-foreground">
-          <div className="mt-1 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Bot size={16} />
-            </div>
+  const TypingIndicator = () => (
+    <div className="mb-4 flex w-full justify-start">
+      <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-card-foreground">
+        <div className="mt-1 shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Bot size={16} />
           </div>
-          <div className="flex-1 break-words">
-            <div className="prose prose-sm dark:prose-invert">
-              {typingText.substring(0, currentTypeIndex)}
-              <span className="ml-1 inline-block h-4 w-2 animate-pulse rounded-full bg-primary"></span>
-            </div>
+        </div>
+        <div className="flex-1 break-words">
+          <div className="prose prose-sm dark:prose-invert">
+            {typingText.substring(0, currentTypeIndex)}
+            <span className="ml-1 inline-block h-4 w-2 animate-pulse rounded-full bg-primary"></span>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
-  // Message placeholder for where API responses will be injected
-  const MessagePlaceholder = () => {
-    return (
-      <div className="mb-4 flex w-full justify-start">
-        <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border/50 bg-card/50 px-4 py-3 text-card-foreground/50">
-          <div className="mt-1 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/5 text-primary/50">
-              <MessageSquare size={16} />
-            </div>
-          </div>
-          <div className="flex-1">
-            <Skeleton className="mb-2 h-4 w-[250px]" />
-            <Skeleton className="mb-2 h-4 w-[180px]" />
-            <Skeleton className="h-4 w-[120px]" />
-            <div className="mt-2 text-xs opacity-50">
-              Waiting for response...
-            </div>
+  const MessagePlaceholder = () => (
+    <div className="mb-4 flex w-full justify-start">
+      <div className="flex max-w-[80%] items-start gap-3 rounded-2xl border border-border/50 bg-card/50 px-4 py-3 text-card-foreground/50">
+        <div className="mt-1 shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/5 text-primary/50">
+            <MessageSquare size={16} />
           </div>
         </div>
+        <div className="flex-1">
+          <Skeleton className="mb-2 h-4 w-[250px]" />
+          <Skeleton className="mb-2 h-4 w-[180px]" />
+          <Skeleton className="h-4 w-[120px]" />
+          <div className="mt-2 text-xs opacity-50">Waiting for response...</div>
+        </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1 px-4 py-4">
         <div className="mb-4 space-y-4">
-          {messages.map((message) => (
-            <ChatBubble key={message.id} message={message} />
-          ))}
-          
+          {messages.map((message) => <ChatBubble key={message.id} message={message} />)}
           {isTyping && <TypingIndicator />}
-          
           {isLoading && !isTyping && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <RefreshCw size={14} className="animate-spin" />
               <span>StockWise AI is thinking...</span>
             </div>
           )}
-          
           {!isLoading && !isTyping && <MessagePlaceholder />}
-          
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            title="Get AI suggestions"
-          >
+          <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" title="Get AI suggestions">
             <Sparkles size={16} className="text-primary" />
           </Button>
           <div className="relative flex-1">
@@ -291,22 +242,13 @@ const ChatInterface = () => {
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
           <span>Examples: </span>
-          <button
-            onClick={() => setInput("What is a P/E ratio?")}
-            className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80"
-          >
+          <button onClick={() => setInput("What is a P/E ratio?")} className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80">
             What is a P/E ratio?
           </button>
-          <button
-            onClick={() => setInput("How is Apple stock performing?")}
-            className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80"
-          >
+          <button onClick={() => setInput("How is Apple stock performing?")} className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80">
             How is Apple stock performing?
           </button>
-          <button
-            onClick={() => setInput("Recommend stocks for beginners")}
-            className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80"
-          >
+          <button onClick={() => setInput("Recommend stocks for beginners")} className="mx-1 rounded-full bg-secondary px-2 py-0.5 hover:bg-secondary/80">
             Recommend stocks for beginners
           </button>
         </div>
