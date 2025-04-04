@@ -9,11 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: 'http://localhost:8080' }));
 
-// Correct instantiation for project-based keys
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1', // explicitly set base URL
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;

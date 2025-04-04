@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Send, Sparkles, Bot, User as UserIcon, RefreshCw, MessageSquare } from "lucide-react";
-import Tooltip from "@/components/Tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Send, Sparkles, Bot, User as UserIcon } from "lucide-react";
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -61,7 +59,7 @@ const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:4000/api/chat", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
