@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import OpenAI from 'openai';
 
 dotenv.config();
@@ -21,11 +21,13 @@ app.post('/api/chat', async (req, res) => {
       temperature: 0.7,
     });
 
-    res.json({ content: completion.choices[0].message.content });
-  } catch (error: any) {
+    res.status(200).json({ content: completion.choices[0].message.content });
+  } catch (error) {
     console.error('OpenAI API error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-app.listen(4000, () => console.log('Server running on port 4000'));
+app.listen(4000, () => {
+  console.log('Server running on port 4000');
+});
