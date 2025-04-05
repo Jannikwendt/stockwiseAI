@@ -5,15 +5,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Send, Sparkles, Bot, User as UserIcon } from "lucide-react";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
 const ChatInterface = () => {
+  const storedRiskProfile = JSON.parse(localStorage.getItem('userRiskProfile') || 'null');
+
   const [messages, setMessages] = useState([
     {
       id: "welcome",
       role: "assistant",
-      content:
-        "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today? You can ask me about stocks, investment concepts, or get personalized recommendations.",
+      content: storedRiskProfile 
+        ? `Hello! I'm StockWise AI, your personal investment assistant. Based on your risk assessment, you're an **${storedRiskProfile.profile} investor**. How can I help you today?`
+        : "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today?",
       timestamp: new Date(),
     },
   ]);
@@ -61,29 +62,30 @@ const ChatInterface = () => {
     setInput("");
     setIsLoading(true);
 
+    const systemMessage = storedRiskProfile
+      ? `You're a helpful financial assistant. The user's risk profile is ${storedRiskProfile.profile}.`
+      : "You're a helpful financial assistant.";
+
     try {
-      const res = await fetch(`${backendUrl}/api/chat`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [
-            {
-              role: "system",
-              content: "You're a helpful financial assistant. The user's risk profile is Aggressive.",
-            },
+            { role: "system", content: systemMessage },
             { role: "user", content: input },
           ],
         }),
       });
 
-      if (!res.ok) throw new Error("Network response was not ok");
-
       const data = await res.json();
+
       setTypingText(data?.content || "Sorry, no response received from the AI service.");
+      setIsTyping(true);
+      setCurrentTypeIndex(0);
     } catch (error) {
       console.error("Error fetching from backend:", error);
       setTypingText("Sorry, there was an error reaching the AI service.");
-    } finally {
       setIsTyping(true);
       setCurrentTypeIndex(0);
     }
@@ -98,14 +100,7 @@ const ChatInterface = () => {
 
   const ChatBubble = ({ message }) => (
     <div className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}>
-      <div
-        className={cn(
-          "flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3",
-          message.role === "user"
-            ? "bg-primary text-primary-foreground"
-            : "bg-card text-card-foreground border border-border"
-        )}
-      >
+      <div className={cn("flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground border border-border")}>
         <div className="mt-1 shrink-0">
           {message.role === "user" ? <UserIcon size={16} /> : <Bot size={16} />}
         </div>

@@ -10,6 +10,8 @@ import MarketOverview from "./pages/MarketOverview";
 import Portfolio from "./pages/Portfolio";
 import Learn from "./pages/Learn";
 import Alerts from "./pages/Alerts";
+import ChatInterface from "@/components/ChatInterface";
+
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/alerts" element={<Alerts />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/chat" element={<ChatInterface />} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

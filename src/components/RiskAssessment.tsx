@@ -1,20 +1,12 @@
-
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { 
-  PieChart as PieChartIcon, 
-  ArrowRight, 
-  ArrowLeft, 
-  CheckCircle2, 
-  ChevronRight,
-  MessageSquare,
-  Sparkles
-} from "lucide-react";
+import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2, ChevronRight, MessageSquare, Sparkles } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,6 +19,26 @@ type Question = {
     score: number;
   }[];
 };
+
+type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
+
+interface RiskProfileData {
+  profile: RiskProfile;
+  description: string;
+  allocation: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
+  summary: string;
+  keyPoints: string[];
+  suitableFor: string;
+}
+
+interface RiskAssessmentProps {
+  className?: string;
+  onCompleted?: (profile: RiskProfileData) => void;
+}
 
 const questions: Question[] = [
   {
@@ -75,21 +87,6 @@ const questions: Question[] = [
     ],
   },
 ];
-
-type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
-
-interface RiskProfileData {
-  profile: RiskProfile;
-  description: string;
-  allocation: {
-    name: string;
-    value: number;
-    color: string;
-  }[];
-  summary: string;
-  keyPoints: string[];
-  suitableFor: string;
-}
 
 const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   Conservative: {
@@ -150,12 +147,8 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
   },
 };
 
-interface RiskAssessmentProps {
-  className?: string;
-  onCompleted?: (profile: RiskProfileData) => void;
-}
-
-const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
+const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted }) => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
@@ -163,59 +156,41 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleAnswer = (questionId: string, value: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value,
-    }));
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const handleNext = () => {
     if (isAnimating) return;
-    
     setIsAnimating(true);
-    
+
     if (currentStep < questions.length - 1) {
       setTimeout(() => {
-        setCurrentStep((prev) => prev + 1);
+        setCurrentStep(currentStep + 1);
         setIsAnimating(false);
       }, 300);
     } else {
       let totalScore = 0;
       questions.forEach((question) => {
-        const answer = answers[question.id];
-        const option = question.options.find((opt) => opt.value === answer);
-        if (option) {
-          totalScore += option.score;
-        }
+        const option = question.options.find(opt => opt.value === answers[question.id]);
+        if (option) totalScore += option.score;
       });
 
-      let profile: RiskProfile;
-      if (totalScore <= 8) {
-        profile = "Conservative";
-      } else if (totalScore <= 12) {
-        profile = "Moderate";
-      } else {
-        profile = "Aggressive";
-      }
+      const profile: RiskProfile = totalScore <= 8 ? "Conservative" : totalScore <= 12 ? "Moderate" : "Aggressive";
+      const profileData = riskProfiles[profile];
 
-      setRiskProfile(riskProfiles[profile]);
+      setRiskProfile(profileData);
       setCompleted(true);
-      
-      if (onCompleted) {
-        onCompleted(riskProfiles[profile]);
-      }
-      
+      if (onCompleted) onCompleted(profileData);
+
       setIsAnimating(false);
     }
   };
 
   const handlePrevious = () => {
     if (isAnimating || currentStep === 0) return;
-    
     setIsAnimating(true);
-    
     setTimeout(() => {
-      setCurrentStep((prev) => prev - 1);
+      setCurrentStep(currentStep - 1);
       setIsAnimating(false);
     }, 300);
   };
@@ -228,254 +203,56 @@ const RiskAssessment = ({ className, onCompleted }: RiskAssessmentProps) => {
   };
 
   const handleChatWithProfile = () => {
-    console.log("Starting chat with risk profile:", riskProfile?.profile);
-  };
-
-  const handleExploreStrategy = () => {
-    console.log("Exploring investment strategy for:", riskProfile?.profile);
+    if (riskProfile) {
+      localStorage.setItem('userRiskProfile', JSON.stringify(riskProfile));
+      navigate('/chat');
+    } else {
+      console.error("Risk profile not set.");
+    }
   };
 
   const question = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
-
-  const customizedTooltip = (props: any) => {
-    const { active, payload } = props;
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background p-3 rounded-lg shadow-lg border border-border text-sm">
-          <p className="font-medium text-foreground">{data.name}</p>
-          <p className="text-primary font-bold">{data.value}%</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const renderLegend = (props: any) => {
-    const { payload } = props;
-    return (
-      <ul className="flex flex-wrap justify-center gap-4 mt-4">
-        {payload.map((entry: any, index: number) => (
-          <li key={`legend-${index}`} className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-sm border border-background/20 shadow-sm" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="font-medium text-sm">{entry.value}: {entry.payload.value}%</span>
-          </li>
-        ))}
-      </ul>
-    );
-  };
 
   return (
     <Card className={cn("w-full max-w-xl overflow-hidden shadow-lg", className)}>
       {!completed ? (
         <>
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <PieChartIcon size={20} className="text-primary" />
-              <CardTitle>Risk Tolerance Assessment</CardTitle>
-            </div>
-            <CardDescription>
-              Answer these questions to determine your investment risk profile.
-            </CardDescription>
-            <div className="mt-4 space-y-1.5">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Question {currentStep + 1} of {questions.length}</span>
-                <span>{Math.round(progress)}% completed</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
+            <CardTitle>Risk Tolerance Assessment</CardTitle>
+            <CardDescription>Answer these questions to determine your investment risk profile.</CardDescription>
+            <Progress value={progress} />
           </CardHeader>
-          
-          <CardContent className="min-h-[260px]">
+
+          <CardContent>
             <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                <h3 className="text-xl font-medium">{question.question}</h3>
-                <RadioGroup
-                  value={answers[question.id] || ""}
-                  onValueChange={(value) => handleAnswer(question.id, value)}
-                  className="space-y-3"
-                >
-                  {question.options.map((option) => (
-                    <div
-                      key={option.value}
-                      className={cn(
-                        "flex cursor-pointer items-center rounded-lg border p-4 transition-all duration-200",
-                        answers[question.id] === option.value
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-input hover:border-primary/50 hover:bg-muted"
-                      )}
-                      onClick={() => handleAnswer(question.id, option.value)}
-                    >
-                      <RadioGroupItem
-                        id={option.value}
-                        value={option.value}
-                        className="mr-3"
-                      />
-                      <Label
-                        htmlFor={option.value}
-                        className="flex-1 cursor-pointer font-medium"
-                      >
-                        {option.label}
-                      </Label>
-                    </div>
+              <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <h3>{question.question}</h3>
+                <RadioGroup value={answers[question.id]} onValueChange={(value) => handleAnswer(question.id, value)}>
+                  {question.options.map((opt) => (
+                    <Label key={opt.value}>
+                      <RadioGroupItem value={opt.value} /> {opt.label}
+                    </Label>
                   ))}
                 </RadioGroup>
               </motion.div>
             </AnimatePresence>
           </CardContent>
-          
-          <CardFooter className="flex justify-between border-t bg-muted/40 p-4">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0 || isAnimating}
-              className="gap-1"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!answers[question.id] || isAnimating}
-              className="gap-1"
-            >
-              {currentStep < questions.length - 1 ? (
-                <>
-                  Next
-                  <ArrowRight size={16} />
-                </>
-              ) : (
-                "View Results"
-              )}
-            </Button>
+
+          <CardFooter>
+            <Button onClick={handlePrevious} disabled={currentStep === 0}>Back</Button>
+            <Button onClick={handleNext} disabled={!answers[question.id]}>{currentStep === questions.length - 1 ? "View Results" : "Next"}</Button>
           </CardFooter>
         </>
       ) : (
         <>
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-green-500" />
-              <CardTitle>Your Investment Profile</CardTitle>
-            </div>
-            <CardDescription>
-              Based on your answers, we've determined your investor profile.
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="pb-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="space-y-8"
-            >
-              <div className="rounded-lg border border-primary/10 bg-primary/5 p-4">
-                <h3 className="text-2xl font-bold text-primary mb-2">
-                  {riskProfile?.profile} Investor
-                </h3>
-                <p className="text-muted-foreground">
-                  {riskProfile?.description}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-lg font-medium text-center">Recommended Asset Allocation</h4>
-                <div className="h-[300px] w-full px-4 mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={riskProfile?.allocation}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={110}
-                        paddingAngle={4}
-                        dataKey="value"
-                        strokeWidth={3}
-                        stroke="#ffffff"
-                        animationDuration={1200}
-                        animationBegin={400}
-                      >
-                        {riskProfile?.allocation.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color}
-                            className="drop-shadow-md"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip content={customizedTooltip} />
-                      <Legend 
-                        content={renderLegend}
-                        layout="horizontal" 
-                        verticalAlign="bottom"
-                        align="center"
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="text-center mt-2 px-6">
-                  <p className="text-foreground font-medium">{riskProfile?.summary}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 bg-muted/20 p-4 rounded-lg">
-                <h4 className="text-base font-medium">Key Investment Characteristics</h4>
-                <ul className="space-y-2">
-                  {riskProfile?.keyPoints.map((point, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-sm"
-                    >
-                      <ChevronRight size={16} className="mt-0.5 text-primary flex-shrink-0" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <h4 className="text-sm font-medium mb-1">Best suited for:</h4>
-                <p className="text-sm text-muted-foreground">{riskProfile?.suitableFor}</p>
-              </div>
-            </motion.div>
+          <CardHeader><CardTitle>Your Profile: {riskProfile?.profile}</CardTitle></CardHeader>
+          <CardContent>
+            <p>{riskProfile?.description}</p>
           </CardContent>
-          
-          <CardFooter className="flex flex-col gap-3 border-t bg-muted/40 p-4">
-            <Button 
-              onClick={handleChatWithProfile} 
-              className="w-full gap-2"
-            >
-              <MessageSquare size={16} />
-              Get personalized stock recommendations
-            </Button>
-            <Button 
-              onClick={handleExploreStrategy}
-              variant="secondary"
-              className="w-full gap-2 group hover:shadow-md transition-all"
-            >
-              <Sparkles size={16} className="text-primary group-hover:animate-pulse" />
-              <span>Explore Strategy</span>
-            </Button>
-            <Button 
-              onClick={handleReset} 
-              variant="outline" 
-              className="w-full"
-            >
-              Retake Assessment
-            </Button>
+          <CardFooter>
+            <Button onClick={handleChatWithProfile}>Get personalized recommendations</Button>
+            <Button onClick={handleReset}>Retake Assessment</Button>
           </CardFooter>
         </>
       )}
