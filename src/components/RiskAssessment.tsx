@@ -1,15 +1,19 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
+
+// Import refactored components
+import QuestionForm from "./risk-assessment/QuestionForm";
+import NavigationButtons from "./risk-assessment/NavigationButtons";
+import ResultHeader from "./risk-assessment/ResultHeader";
+import RiskProfileDescription from "./risk-assessment/RiskProfileDescription";
+import PortfolioDonutChart from "./risk-assessment/PortfolioDonutChart";
+import RiskProfileKeyPoints from "./risk-assessment/RiskProfileKeyPoints";
+import ResultFooter from "./risk-assessment/ResultFooter";
 
 type Question = {
   id: string;
@@ -97,7 +101,7 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
     allocation: [
       { name: "Bonds", value: 50, color: "#9EA1FF" },
       { name: "Large Cap Stocks", value: 25, color: "#98E4FF" },
-      { name: "Cash", value: 15, color: "#FDE1D3" }, // Replaced bright yellow with soft peach
+      { name: "Cash", value: 15, color: "#FDE1D3" }, 
       { name: "International", value: 10, color: "#FFA69E" },
     ],
     keyPoints: [
@@ -117,7 +121,7 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
       { name: "Bonds", value: 30, color: "#9EA1FF" },
       { name: "International", value: 15, color: "#FFA69E" },
       { name: "Mid Cap Stocks", value: 10, color: "#B8E0D2" },
-      { name: "Cash", value: 5, color: "#FDE1D3" }, // Replaced bright yellow with soft peach
+      { name: "Cash", value: 5, color: "#FDE1D3" }, 
     ],
     keyPoints: [
       "Balance between growth and income",
@@ -226,7 +230,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
   return (
     <Card className={cn(
       "w-full max-w-2xl shadow-lg", 
-      "max-h-[85vh] overflow-y-auto",  // Added max height and vertical scrolling
+      "max-h-[85vh] overflow-y-auto",
       className
     )}>
       {!completed ? (
@@ -238,50 +242,22 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
           </CardHeader>
 
           <CardContent className="py-6">
-            <AnimatePresence mode="wait">
-              <motion.div 
-                key={currentStep} 
-                initial={{ opacity: 0, x: 20 }} 
-                animate={{ opacity: 1, x: 0 }} 
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-5"
-              >
-                <h3 className="text-xl font-medium">{question.question}</h3>
-                <RadioGroup 
-                  value={answers[question.id]} 
-                  onValueChange={(value) => handleAnswer(question.id, value)}
-                  className="space-y-4"
-                >
-                  {question.options.map((opt) => (
-                    <div key={opt.value} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-accent/20 transition-colors">
-                      <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} />
-                      <Label htmlFor={`${question.id}-${opt.value}`} className="cursor-pointer text-base font-medium w-full">
-                        {opt.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </motion.div>
-            </AnimatePresence>
+            <QuestionForm 
+              currentStep={currentStep}
+              question={question}
+              answers={answers}
+              onAnswer={handleAnswer}
+            />
           </CardContent>
 
           <CardFooter className="pt-4 border-t flex justify-between sticky bottom-0 bg-card z-10">
-            <Button 
-              onClick={handlePrevious} 
-              disabled={currentStep === 0}
-              variant="ghost"
-              className="gap-2"
-            >
-              <ArrowLeft size={16} /> Back
-            </Button>
-            <Button 
-              onClick={handleNext} 
-              disabled={!answers[question.id]}
-              className="gap-2"
-            >
-              {currentStep === questions.length - 1 ? "View Results" : "Next"} 
-              <ArrowRight size={16} />
-            </Button>
+            <NavigationButtons 
+              currentStep={currentStep}
+              totalSteps={questions.length}
+              isDisabled={!answers[question.id]}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+            />
           </CardFooter>
         </>
       ) : (
@@ -290,101 +266,26 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="pb-6" // Added bottom padding to ensure content isn't cut off
+            className="pb-6"
           >
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <CheckCircle2 className="text-primary h-5 w-5" />
-                Your Risk Profile: {riskProfile?.profile}
-              </CardTitle>
-              <CardDescription className="text-base pt-1">
-                {riskProfile?.summary}
-              </CardDescription>
+              {riskProfile && <ResultHeader profile={riskProfile.profile} summary={riskProfile.summary} />}
             </CardHeader>
             <CardContent className="space-y-8">
-              <p className="text-base">{riskProfile?.description}</p>
-              
-              {/* Donut Chart - Updated with reduced size, better spacing and legend positioning */}
               {riskProfile && (
-                <div className="pt-10 pb-2"> {/* Increased top margin */}
-                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                    <PieChartIcon className="h-5 w-5 text-primary" />
-                    Recommended Portfolio Allocation
-                  </h3>
-                  <div className="h-[160px] w-full"> {/* Further reduced height */}
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Pie
-                          data={riskProfile.allocation}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={35} /* Further reduced from 40 */
-                          outerRadius={60} /* Further reduced from 65 */
-                          paddingAngle={2}
-                          dataKey="value"
-                          nameKey="name"
-                          labelLine={false}
-                        >
-                          {riskProfile.allocation.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={entry.color} 
-                              stroke="var(--background)" 
-                              strokeWidth={2} 
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-card p-2 border rounded-md shadow-sm">
-                                  <p className="font-medium">{data.name}</p>
-                                  <p>{`${data.value}%`}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Legend 
-                          layout="horizontal" 
-                          verticalAlign="bottom" 
-                          align="center"
-                          iconType="circle"
-                          iconSize={8}
-                          wrapperStyle={{ paddingTop: 30, paddingBottom: 10 }} /* Increased margin between chart and legend */
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                <>
+                  <RiskProfileDescription description={riskProfile.description} />
+                  <PortfolioDonutChart allocation={riskProfile.allocation} />
+                  <RiskProfileKeyPoints 
+                    suitableFor={riskProfile.suitableFor} 
+                    keyPoints={riskProfile.keyPoints}
+                  />
+                </>
               )}
-              
-              <div className="space-y-3 pt-4 pb-10"> {/* Added more bottom padding */}
-                <h4 className="font-medium">Suitable for:</h4>
-                <p className="text-muted-foreground">{riskProfile?.suitableFor}</p>
-                
-                <h4 className="font-medium pt-2">Key points:</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {riskProfile?.keyPoints.map((point, index) => (
-                    <li key={index} className="text-muted-foreground">{point}</li>
-                  ))}
-                </ul>
-              </div>
             </CardContent>
             
-            {/* Footer with increased bottom padding */}
-            <CardFooter className="pt-4 pb-8 border-t flex gap-3 flex-wrap sticky bottom-0 bg-card z-10"> 
-              <Button 
-                onClick={handleChatWithProfile} 
-                variant="outline"
-                size="lg"
-                className="w-full"
-              >
-                View My Investment Chat
-              </Button>
+            <CardFooter className="pt-4 pb-8 border-t flex gap-3 flex-wrap sticky bottom-0 bg-card z-10">
+              <ResultFooter onChatWithProfile={handleChatWithProfile} />
             </CardFooter>
           </motion.div>
         </AnimatePresence>
