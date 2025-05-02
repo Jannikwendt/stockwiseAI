@@ -15,6 +15,11 @@ interface Message {
   timestamp: Date;
 }
 
+interface RiskProfileEvent {
+  profile: string;
+  description: string;
+}
+
 const ChatInterface = () => {
   const storedRiskProfile = JSON.parse(localStorage.getItem('userRiskProfile') || 'null');
 
@@ -63,6 +68,28 @@ const ChatInterface = () => {
 
     return () => clearTimeout(typingTimer);
   }, [isTyping, currentTypeIndex, typingText]);
+
+  // Listen for custom event from RiskAssessment component
+  useEffect(() => {
+    const handleRiskProfileMessage = (event: CustomEvent<RiskProfileEvent>) => {
+      const { profile, description } = event.detail;
+      
+      // Create personalized message
+      const personalizedMessage = `I see you've completed your risk assessment! Based on your answers, you have a **${profile}** risk profile. ${description}\n\nWhat questions do you have about your investment strategy or specific recommendations for your risk profile?`;
+      
+      setTypingText(personalizedMessage);
+      setIsTyping(true);
+      setCurrentTypeIndex(0);
+    };
+
+    // Add event listener
+    window.addEventListener('triggerChatMessage', handleRiskProfileMessage as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('triggerChatMessage', handleRiskProfileMessage as EventListener);
+    };
+  }, []);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;

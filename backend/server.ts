@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -12,22 +13,14 @@ app.use(cors({ origin: 'http://localhost:8080' }));
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 app.post('/api/chat', async (req, res) => {
-  const { messages, riskProfile } = req.body; // <-- receive riskProfile from frontend
+  const { messages } = req.body;
 
-  let riskMessage = 'You are a helpful financial assistant.';
-  
-  if (riskProfile) {
-    riskMessage = `You are a helpful financial assistant. The user's risk profile is "${riskProfile.profile}". 
-    Their preferred strategy includes: ${riskProfile.summary}.`;
-  }
+  let systemMessage = messages.find(msg => msg.role === 'system')?.content || 'You are a helpful financial assistant.';
 
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
-      messages: [
-        { role: "system", content: riskMessage },
-        ...messages
-      ],
+      messages: messages,
       temperature: 0.7,
     });
 

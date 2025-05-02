@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2, MessageSquare } from "lucide-react";
+import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
@@ -207,7 +207,15 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
   const handleChatWithProfile = () => {
     if (riskProfile) {
       localStorage.setItem('userRiskProfile', JSON.stringify(riskProfile));
-      navigate('/chat');
+      
+      // Create and dispatch a custom event to trigger a chat message
+      const event = new CustomEvent('triggerChatMessage', { 
+        detail: { 
+          profile: riskProfile.profile,
+          description: riskProfile.description
+        } 
+      });
+      window.dispatchEvent(event);
     } else {
       console.error("Risk profile not set.");
     }
@@ -366,18 +374,11 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             <CardFooter className="pt-4 border-t flex gap-3 flex-wrap">
               <Button 
                 onClick={handleChatWithProfile} 
-                className="gap-2 flex-1"
-                size="lg"
-              >
-                <MessageSquare size={18} />
-                Get personalized recommendations
-              </Button>
-              <Button 
-                onClick={handleReset} 
                 variant="outline"
                 size="lg"
+                className="w-full"
               >
-                Retake Assessment
+                View My Investment Chat
               </Button>
             </CardFooter>
           </motion.div>
