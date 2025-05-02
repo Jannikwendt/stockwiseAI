@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,10 +6,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Send, Sparkles, Bot, User as UserIcon } from "lucide-react";
 
+type MessageRole = "user" | "assistant";
+
+interface Message {
+  id: string;
+  role: MessageRole;
+  content: string;
+  timestamp: Date;
+}
+
 const ChatInterface = () => {
   const storedRiskProfile = JSON.parse(localStorage.getItem('userRiskProfile') || 'null');
 
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
@@ -57,7 +67,7 @@ const ChatInterface = () => {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() };
+    const userMessage: Message = { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -98,7 +108,7 @@ const ChatInterface = () => {
     }
   };
 
-  const ChatBubble = ({ message }) => (
+  const ChatBubble = ({ message }: { message: Message }) => (
     <div className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}>
       <div className={cn("flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground border border-border")}>
         <div className="mt-1 shrink-0">

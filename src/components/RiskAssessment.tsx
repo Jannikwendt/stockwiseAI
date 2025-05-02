@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2, ChevronRight, MessageSquare, Sparkles } from "lucide-react";
+import { PieChart as PieChartIcon, ArrowRight, ArrowLeft, CheckCircle2, MessageSquare } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
 
 type Question = {
   id: string;
@@ -215,46 +217,171 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
   const progress = ((currentStep + 1) / questions.length) * 100;
 
   return (
-    <Card className={cn("w-full max-w-xl overflow-hidden shadow-lg", className)}>
+    <Card className={cn("w-full max-w-2xl overflow-hidden shadow-lg", className)}>
       {!completed ? (
         <>
           <CardHeader className="pb-4">
-            <CardTitle>Risk Tolerance Assessment</CardTitle>
-            <CardDescription>Answer these questions to determine your investment risk profile.</CardDescription>
-            <Progress value={progress} />
+            <CardTitle className="text-2xl">Risk Tolerance Assessment</CardTitle>
+            <CardDescription className="text-base">Answer these questions to determine your investment risk profile.</CardDescription>
+            <Progress value={progress} className="h-2 mt-3" />
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="py-6">
             <AnimatePresence mode="wait">
-              <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h3>{question.question}</h3>
-                <RadioGroup value={answers[question.id]} onValueChange={(value) => handleAnswer(question.id, value)}>
+              <motion.div 
+                key={currentStep} 
+                initial={{ opacity: 0, x: 20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-5"
+              >
+                <h3 className="text-xl font-medium">{question.question}</h3>
+                <RadioGroup 
+                  value={answers[question.id]} 
+                  onValueChange={(value) => handleAnswer(question.id, value)}
+                  className="space-y-4"
+                >
                   {question.options.map((opt) => (
-                    <Label key={opt.value}>
-                      <RadioGroupItem value={opt.value} /> {opt.label}
-                    </Label>
+                    <div key={opt.value} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-accent/20 transition-colors">
+                      <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} />
+                      <Label htmlFor={`${question.id}-${opt.value}`} className="cursor-pointer text-base font-medium w-full">
+                        {opt.label}
+                      </Label>
+                    </div>
                   ))}
                 </RadioGroup>
               </motion.div>
             </AnimatePresence>
           </CardContent>
 
-          <CardFooter>
-            <Button onClick={handlePrevious} disabled={currentStep === 0}>Back</Button>
-            <Button onClick={handleNext} disabled={!answers[question.id]}>{currentStep === questions.length - 1 ? "View Results" : "Next"}</Button>
+          <CardFooter className="pt-4 border-t flex justify-between">
+            <Button 
+              onClick={handlePrevious} 
+              disabled={currentStep === 0}
+              variant="ghost"
+              className="gap-2"
+            >
+              <ArrowLeft size={16} /> Back
+            </Button>
+            <Button 
+              onClick={handleNext} 
+              disabled={!answers[question.id]}
+              className="gap-2"
+            >
+              {currentStep === questions.length - 1 ? "View Results" : "Next"} 
+              <ArrowRight size={16} />
+            </Button>
           </CardFooter>
         </>
       ) : (
-        <>
-          <CardHeader><CardTitle>Your Profile: {riskProfile?.profile}</CardTitle></CardHeader>
-          <CardContent>
-            <p>{riskProfile?.description}</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleChatWithProfile}>Get personalized recommendations</Button>
-            <Button onClick={handleReset}>Retake Assessment</Button>
-          </CardFooter>
-        </>
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <CheckCircle2 className="text-primary h-5 w-5" />
+                Your Risk Profile: {riskProfile?.profile}
+              </CardTitle>
+              <CardDescription className="text-base pt-1">
+                {riskProfile?.summary}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-base">{riskProfile?.description}</p>
+              
+              {/* Donut Chart */}
+              {riskProfile && (
+                <div className="pt-4 pb-2">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <PieChartIcon className="h-5 w-5 text-primary" />
+                    Recommended Portfolio Allocation
+                  </h3>
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={riskProfile.allocation}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={70}
+                          outerRadius={100}
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {riskProfile.allocation.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color} 
+                              stroke="var(--background)" 
+                              strokeWidth={2} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-card p-2 border rounded-md shadow-sm">
+                                  <p className="font-medium">{data.name}</p>
+                                  <p>{`${data.value}%`}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend 
+                          layout="horizontal" 
+                          verticalAlign="bottom" 
+                          align="center" 
+                          iconType="circle"
+                          iconSize={8}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-3 pt-2">
+                <h4 className="font-medium">Suitable for:</h4>
+                <p className="text-muted-foreground">{riskProfile?.suitableFor}</p>
+                
+                <h4 className="font-medium pt-2">Key points:</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {riskProfile?.keyPoints.map((point, index) => (
+                    <li key={index} className="text-muted-foreground">{point}</li>
+                  ))}
+                </ul>
+              </div>
+            </CardContent>
+            
+            <CardFooter className="pt-4 border-t flex gap-3 flex-wrap">
+              <Button 
+                onClick={handleChatWithProfile} 
+                className="gap-2 flex-1"
+                size="lg"
+              >
+                <MessageSquare size={18} />
+                Get personalized recommendations
+              </Button>
+              <Button 
+                onClick={handleReset} 
+                variant="outline"
+                size="lg"
+              >
+                Retake Assessment
+              </Button>
+            </CardFooter>
+          </motion.div>
+        </AnimatePresence>
       )}
     </Card>
   );

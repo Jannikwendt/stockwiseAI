@@ -27,10 +27,9 @@ const App = () => (
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/chat" element={<ChatInterface />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
-          <Route path="/chat" element={<ChatInterface />} />
-
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
