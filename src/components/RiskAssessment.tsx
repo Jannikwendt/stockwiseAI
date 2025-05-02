@@ -300,22 +300,22 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             <CardContent className="space-y-6">
               <p className="text-base">{riskProfile?.description}</p>
               
-              {/* Donut Chart */}
+              {/* Donut Chart - Modified with reduced size and increased top margin */}
               {riskProfile && (
-                <div className="pt-4 pb-2">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <div className="pt-6 pb-2">
+                  <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
                     <PieChartIcon className="h-5 w-5 text-primary" />
                     Recommended Portfolio Allocation
                   </h3>
-                  <div className="h-[280px] w-full">
+                  <div className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={riskProfile.allocation}
                           cx="50%"
                           cy="50%"
-                          innerRadius={70}
-                          outerRadius={100}
+                          innerRadius={60}
+                          outerRadius={90}
                           paddingAngle={2}
                           dataKey="value"
                           nameKey="name"
@@ -371,7 +371,8 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
               </div>
             </CardContent>
             
-            <CardFooter className="pt-4 border-t flex gap-3 flex-wrap">
+            {/* Footer with increased bottom padding */}
+            <CardFooter className="pt-4 pb-6 border-t flex gap-3 flex-wrap">
               <Button 
                 onClick={handleChatWithProfile} 
                 variant="outline"
