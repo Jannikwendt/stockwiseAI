@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -314,8 +313,8 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                           data={riskProfile.allocation}
                           cx="50%"
                           cy="50%"
-                          innerRadius={40} {/* Reduced from 50 */}
-                          outerRadius={65} {/* Reduced from 75 */}
+                          innerRadius={40} /* Reduced from 50 */
+                          outerRadius={65} /* Reduced from 75 */
                           paddingAngle={2}
                           dataKey="value"
                           nameKey="name"
@@ -350,7 +349,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                           align="center"
                           iconType="circle"
                           iconSize={8}
-                          wrapperStyle={{ paddingTop: 25 }} {/* Increased margin between chart and legend */}
+                          wrapperStyle={{ paddingTop: 25 }} /* Increased margin between chart and legend */
                         />
                       </PieChart>
                     </ResponsiveContainer>
