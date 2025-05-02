@@ -13,13 +13,29 @@ interface PortfolioDonutChartProps {
 }
 
 const PortfolioDonutChart: React.FC<PortfolioDonutChartProps> = ({ allocation }) => {
+  // Use darker colors for the chart
+  const darkColorMapping: Record<string, string> = {
+    "#9EA1FF": "#5D61B0", // Darker purple for Bonds
+    "#98E4FF": "#3A7A9A", // Darker blue for Large Cap Stocks
+    "#FDE1D3": "#C28B67", // Darker beige for Cash
+    "#FFA69E": "#B0524A", // Darker salmon for International
+    "#B8E0D2": "#6D9A8A", // Darker teal for Mid Cap Stocks
+    "#C7F9CC": "#78A87D"  // Darker green for Small Cap Stocks
+  };
+
+  // Map the original allocation to use darker colors
+  const darkerAllocation = allocation.map(item => ({
+    ...item,
+    color: darkColorMapping[item.color] || item.color
+  }));
+
   return (
     <div className="pt-16 pb-2 relative z-20">
       <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
             <Pie
-              data={allocation}
+              data={darkerAllocation}
               cx="50%"
               cy="50%"
               innerRadius={35}
@@ -29,7 +45,7 @@ const PortfolioDonutChart: React.FC<PortfolioDonutChartProps> = ({ allocation })
               nameKey="name"
               labelLine={false}
             >
-              {allocation.map((entry, index) => (
+              {darkerAllocation.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color} 
