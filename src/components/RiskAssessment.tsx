@@ -300,22 +300,22 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             <CardContent className="space-y-6">
               <p className="text-base">{riskProfile?.description}</p>
               
-              {/* Donut Chart - Reduced size, better label visibility, and legend below chart */}
+              {/* Donut Chart - Updated with reduced size, better spacing and legend positioning */}
               {riskProfile && (
-                <div className="pt-6 pb-2">
-                  <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
+                <div className="pt-12 pb-2"> {/* Increased top margin */}
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                     <PieChartIcon className="h-5 w-5 text-primary" />
                     Recommended Portfolio Allocation
                   </h3>
-                  <div className="h-[220px] w-full">
+                  <div className="h-[180px] w-full"> {/* Reduced height by ~20% */}
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                         <Pie
                           data={riskProfile.allocation}
                           cx="50%"
                           cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
+                          innerRadius={40} {/* Reduced from 50 */}
+                          outerRadius={65} {/* Reduced from 75 */}
                           paddingAngle={2}
                           dataKey="value"
                           nameKey="name"
@@ -350,7 +350,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                           align="center"
                           iconType="circle"
                           iconSize={8}
-                          wrapperStyle={{ paddingTop: 20 }}
+                          wrapperStyle={{ paddingTop: 25 }} {/* Increased margin between chart and legend */}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -358,7 +358,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                 </div>
               )}
               
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-2 pb-10"> {/* Added bottom padding */}
                 <h4 className="font-medium">Suitable for:</h4>
                 <p className="text-muted-foreground">{riskProfile?.suitableFor}</p>
                 
@@ -372,7 +372,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             </CardContent>
             
             {/* Footer with increased bottom padding */}
-            <CardFooter className="pt-4 pb-6 border-t flex gap-3 flex-wrap">
+            <CardFooter className="pt-4 pb-8 border-t flex gap-3 flex-wrap"> {/* Increased bottom padding */}
               <Button 
                 onClick={handleChatWithProfile} 
                 variant="outline"
