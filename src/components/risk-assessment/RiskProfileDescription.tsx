@@ -7,7 +7,7 @@ interface RiskProfileDescriptionProps {
 
 const RiskProfileDescription: React.FC<RiskProfileDescriptionProps> = ({ description }) => {
   return (
-    <p className="text-base">{description}</p>
+    <p className="text-base mb-8">{description}</p>
   );
 };
 
