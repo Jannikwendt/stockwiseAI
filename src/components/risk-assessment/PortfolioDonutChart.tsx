@@ -1,7 +1,6 @@
 
 import React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { PieChart as PieChartIcon } from "lucide-react";
 
 interface PortfolioAllocation {
   name: string;
@@ -16,10 +15,6 @@ interface PortfolioDonutChartProps {
 const PortfolioDonutChart: React.FC<PortfolioDonutChartProps> = ({ allocation }) => {
   return (
     <div className="pt-10 pb-2">
-      <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-        <PieChartIcon className="h-5 w-5 text-primary" />
-        Recommended Portfolio Allocation
-      </h3>
       <div className="h-[160px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
