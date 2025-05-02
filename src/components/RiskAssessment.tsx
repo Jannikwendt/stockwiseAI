@@ -97,7 +97,7 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
     allocation: [
       { name: "Bonds", value: 50, color: "#9EA1FF" },
       { name: "Large Cap Stocks", value: 25, color: "#98E4FF" },
-      { name: "Cash", value: 15, color: "#FFEF82" },
+      { name: "Cash", value: 15, color: "#FDE1D3" }, // Replaced bright yellow with soft peach
       { name: "International", value: 10, color: "#FFA69E" },
     ],
     keyPoints: [
@@ -117,7 +117,7 @@ const riskProfiles: Record<RiskProfile, RiskProfileData> = {
       { name: "Bonds", value: 30, color: "#9EA1FF" },
       { name: "International", value: 15, color: "#FFA69E" },
       { name: "Mid Cap Stocks", value: 10, color: "#B8E0D2" },
-      { name: "Cash", value: 5, color: "#FFEF82" },
+      { name: "Cash", value: 5, color: "#FDE1D3" }, // Replaced bright yellow with soft peach
     ],
     keyPoints: [
       "Balance between growth and income",
@@ -224,10 +224,14 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
   const progress = ((currentStep + 1) / questions.length) * 100;
 
   return (
-    <Card className={cn("w-full max-w-2xl overflow-hidden shadow-lg", className)}>
+    <Card className={cn(
+      "w-full max-w-2xl shadow-lg", 
+      "max-h-[85vh] overflow-y-auto",  // Added max height and vertical scrolling
+      className
+    )}>
       {!completed ? (
         <>
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 sticky top-0 bg-card z-10">
             <CardTitle className="text-2xl">Risk Tolerance Assessment</CardTitle>
             <CardDescription className="text-base">Answer these questions to determine your investment risk profile.</CardDescription>
             <Progress value={progress} className="h-2 mt-3" />
@@ -261,7 +265,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             </AnimatePresence>
           </CardContent>
 
-          <CardFooter className="pt-4 border-t flex justify-between">
+          <CardFooter className="pt-4 border-t flex justify-between sticky bottom-0 bg-card z-10">
             <Button 
               onClick={handlePrevious} 
               disabled={currentStep === 0}
@@ -286,6 +290,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="pb-6" // Added bottom padding to ensure content isn't cut off
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
@@ -296,25 +301,25 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                 {riskProfile?.summary}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
               <p className="text-base">{riskProfile?.description}</p>
               
               {/* Donut Chart - Updated with reduced size, better spacing and legend positioning */}
               {riskProfile && (
-                <div className="pt-12 pb-2"> {/* Increased top margin */}
+                <div className="pt-10 pb-2"> {/* Increased top margin */}
                   <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                     <PieChartIcon className="h-5 w-5 text-primary" />
                     Recommended Portfolio Allocation
                   </h3>
-                  <div className="h-[180px] w-full"> {/* Reduced height by ~20% */}
+                  <div className="h-[160px] w-full"> {/* Further reduced height */}
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                         <Pie
                           data={riskProfile.allocation}
                           cx="50%"
                           cy="50%"
-                          innerRadius={40} /* Reduced from 50 */
-                          outerRadius={65} /* Reduced from 75 */
+                          innerRadius={35} /* Further reduced from 40 */
+                          outerRadius={60} /* Further reduced from 65 */
                           paddingAngle={2}
                           dataKey="value"
                           nameKey="name"
@@ -349,7 +354,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                           align="center"
                           iconType="circle"
                           iconSize={8}
-                          wrapperStyle={{ paddingTop: 25 }} /* Increased margin between chart and legend */
+                          wrapperStyle={{ paddingTop: 30, paddingBottom: 10 }} /* Increased margin between chart and legend */
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -357,7 +362,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
                 </div>
               )}
               
-              <div className="space-y-3 pt-2 pb-10"> {/* Added bottom padding */}
+              <div className="space-y-3 pt-4 pb-10"> {/* Added more bottom padding */}
                 <h4 className="font-medium">Suitable for:</h4>
                 <p className="text-muted-foreground">{riskProfile?.suitableFor}</p>
                 
@@ -371,7 +376,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ className, onCompleted 
             </CardContent>
             
             {/* Footer with increased bottom padding */}
-            <CardFooter className="pt-4 pb-8 border-t flex gap-3 flex-wrap"> {/* Increased bottom padding */}
+            <CardFooter className="pt-4 pb-8 border-t flex gap-3 flex-wrap sticky bottom-0 bg-card z-10"> 
               <Button 
                 onClick={handleChatWithProfile} 
                 variant="outline"
