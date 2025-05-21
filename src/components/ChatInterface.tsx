@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +20,15 @@ interface RiskProfileEvent {
 }
 
 const ChatInterface = () => {
-  const storedRiskProfile = JSON.parse(localStorage.getItem('userRiskProfile') || 'null');
+  const storedRiskProfile = JSON.parse(
+    localStorage.getItem("userRiskProfile") || "null"
+  );
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: storedRiskProfile 
+      content: storedRiskProfile
         ? `Hello! I'm StockWise AI, your personal investment assistant. Based on your risk assessment, you're an **${storedRiskProfile.profile} investor**. How can I help you today?`
         : "Hello! I'm StockWise AI, your personal investment assistant. How can I help you today?",
       timestamp: new Date(),
@@ -39,96 +40,111 @@ const ChatInterface = () => {
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const messagesEndRef = useRef(null);
-
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typingText]);
 
+  // Typewriter effect
   useEffect(() => {
-    let typingTimer;
-
-    if (isTyping && typingText) {
-      if (currentTypeIndex < typingText.length) {
-        typingTimer = setTimeout(() => {
-          setCurrentTypeIndex((prev) => prev + 1);
-        }, 15);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now().toString(), role: "assistant", content: typingText, timestamp: new Date() },
-        ]);
-        setTypingText("");
-        setIsTyping(false);
-        setIsLoading(false);
-        setCurrentTypeIndex(0);
-      }
+    if (!isTyping) return;
+    if (currentTypeIndex < typingText.length) {
+      const timer = setTimeout(() => {
+        setCurrentTypeIndex((i) => i + 1);
+      }, 15);
+      return () => clearTimeout(timer);
     }
-
-    return () => clearTimeout(typingTimer);
+    // flush
+    setMessages((m) => [
+      ...m,
+      {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: typingText,
+        timestamp: new Date(),
+      },
+    ]);
+    setIsTyping(false);
+    setIsLoading(false);
+    setCurrentTypeIndex(0);
   }, [isTyping, currentTypeIndex, typingText]);
 
-  // Listen for custom event from RiskAssessment component
+  // Listen for risk‐profile event
   useEffect(() => {
-    const handleRiskProfileMessage = (event: CustomEvent<RiskProfileEvent>) => {
-      const { profile, description } = event.detail;
-      
-      // Create personalized message
-      const personalizedMessage = `I see you've completed your risk assessment! Based on your answers, you have a **${profile}** risk profile. ${description}\n\nWhat questions do you have about your investment strategy or specific recommendations for your risk profile?`;
-      
-      setTypingText(personalizedMessage);
-      setIsTyping(true);
-      setCurrentTypeIndex(0);
-    };
+    const handleRiskProfileMessage = (ev: any) => {
+      const { profile, description } = ev.detail as RiskProfileEvent;
+      const personalized = `I see you've completed your risk assessment! Based on your answers, you have a **${profile}** risk profile. ${description}
 
-    // Add event listener
-    window.addEventListener('triggerChatMessage', handleRiskProfileMessage as EventListener);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('triggerChatMessage', handleRiskProfileMessage as EventListener);
+What questions do you have about your investment strategy or specific recommendations for your risk profile?`;
+      setTypingText(personalized);
+      setIsTyping(true);
     };
+    window.addEventListener(
+      "triggerChatMessage",
+      handleRiskProfileMessage as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "triggerChatMessage",
+        handleRiskProfileMessage as EventListener
+      );
   }, []);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    const trimmed = input.trim();
+    if (!trimmed) return;
 
-    const userMessage: Message = { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() };
-    setMessages((prev) => [...prev, userMessage]);
+    // 1) Add user message locally
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: trimmed,
+      timestamp: new Date(),
+    };
+    setMessages((m) => [...m, userMsg]);
     setInput("");
     setIsLoading(true);
 
-    const systemMessage = storedRiskProfile
-      ? `You're a helpful financial assistant. The user's risk profile is ${storedRiskProfile.profile}.`
+    // 2) Build system prompt
+    const systemContent = storedRiskProfile
+      ? `You're a helpful financial assistant. User's risk profile: ${storedRiskProfile.profile}.`
       : "You're a helpful financial assistant.";
 
+    // 3) Assemble full payload
+    const payload = {
+      messages: [
+        { role: "system", content: systemContent },
+        ...messages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+        { role: "user", content: trimmed },
+      ],
+    };
+
+    // 4) POST to backend
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            { role: "system", content: systemMessage },
-            { role: "user", content: input },
-          ],
-        }),
-      });
-
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       const data = await res.json();
-
-      setTypingText(data?.content || "Sorry, no response received from the AI service.");
+      setTypingText(data.content || "No answer from the AI service.");
       setIsTyping(true);
-      setCurrentTypeIndex(0);
-    } catch (error) {
-      console.error("Error fetching from backend:", error);
-      setTypingText("Sorry, there was an error reaching the AI service.");
+    } catch (e) {
+      console.error("Fetch error:", e);
+      setTypingText("Sorry, I couldn't reach the AI service.");
       setIsTyping(true);
-      setCurrentTypeIndex(0);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -136,10 +152,26 @@ const ChatInterface = () => {
   };
 
   const ChatBubble = ({ message }: { message: Message }) => (
-    <div className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}>
-      <div className={cn("flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground border border-border")}>
+    <div
+      className={cn(
+        "mb-4 flex w-full",
+        message.role === "user" ? "justify-end" : "justify-start"
+      )}
+    >
+      <div
+        className={cn(
+          "flex max-w-[80%] items-start gap-3 rounded-2xl px-4 py-3",
+          message.role === "user"
+            ? "bg-primary text-primary-foreground"
+            : "bg-card text-card-foreground border border-border"
+        )}
+      >
         <div className="mt-1 shrink-0">
-          {message.role === "user" ? <UserIcon size={16} /> : <Bot size={16} />}
+          {message.role === "user" ? (
+            <UserIcon size={16} />
+          ) : (
+            <Bot size={16} />
+          )}
         </div>
         <div className="flex-1 break-words">{message.content}</div>
       </div>
@@ -149,15 +181,18 @@ const ChatInterface = () => {
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1 px-4 py-4">
-        {messages.map((message) => (
-          <ChatBubble key={message.id} message={message} />
+        {messages.map((m) => (
+          <ChatBubble key={m.id} message={m} />
         ))}
-        {isTyping && <div>{typingText.substring(0, currentTypeIndex)}|</div>}
+        {isTyping && (
+          <div>{typingText.substring(0, currentTypeIndex)}|</div>
+        )}
         <div ref={messagesEndRef} />
       </ScrollArea>
+
       <div className="border-t border-border bg-card p-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" title="Get AI suggestions">
+          <Button variant="outline" size="icon" title="Get AI suggestions" disabled>
             <Sparkles size={16} />
           </Button>
           <Input
@@ -167,7 +202,10 @@ const ChatInterface = () => {
             placeholder="Ask about stocks, concepts, or get recommendations..."
             disabled={isLoading || isTyping}
           />
-          <Button onClick={handleSendMessage} disabled={!input.trim() || isLoading || isTyping}>
+          <Button
+            onClick={handleSendMessage}
+            disabled={!input.trim() || isLoading || isTyping}
+          >
             <Send size={16} />
           </Button>
         </div>

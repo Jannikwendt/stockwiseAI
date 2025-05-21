@@ -7,8 +7,7 @@
     "strict": true,
     "skipLibCheck": true,
     "rootDir": ".",
-    "outDir": "dist",
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "outDir": "dist"
   },
-  "include": ["server.ts", "types/**/*.d.ts"]
+  "include": ["server.ts"]
 }
